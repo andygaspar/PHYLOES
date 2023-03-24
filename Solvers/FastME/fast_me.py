@@ -22,7 +22,7 @@ class FastMeSolver(Solver):
                  bme=True, nni=True, digits=None, post_processing=False, init_topology=None,
                  triangular_inequality=False, logs=False, num_topologies=1):
         super().__init__(d)
-        self.path = 'Solvers/FastME/fastme-2.1.6.4/'
+        self.path = 'Solvers/FastME/'
         self.init_topology = init_topology
         self.flags = ''
         self.method = 'b' if bme else None
@@ -50,7 +50,9 @@ class FastMeSolver(Solver):
                 with open(self.path + 'init_topology.nwk', 'w', newline='') as csvfile:
                     csvfile.write(compute_multiple_newick(self.init_topology))
         t = time.time()
-        os.system(self.path + "src/fastme -i " + self.path + "mat.mat " + self.flags)
+        r = range(self.n_taxa)
+        print("val ", np.sum([self.d[i, j] * self.np_powers[self.init_topology[i, j]] for i in r for j in r]))
+        os.system(self.path + "fastme -i " + self.path + "mat.mat " + self.flags)
         self.solve_time = time.time() - t
 
         if self.num_topologies < 2:

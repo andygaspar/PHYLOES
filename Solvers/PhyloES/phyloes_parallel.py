@@ -7,7 +7,7 @@ from Solvers.solver import Solver
 
 
 class PhyloES2(Solver):
-    def __init__(self, d, batch=10, max_iterations = 25, fast_me=True, spr=True, max_non_improve_iter=10):
+    def __init__(self, d, batch=10, max_iterations=25, fast_me=True, spr=True, max_non_improve_iter=10):
         super().__init__(d)
 
         self.d = torch.tensor(self.d, device=self.device)

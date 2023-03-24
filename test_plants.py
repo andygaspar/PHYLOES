@@ -1,3 +1,4 @@
+import os
 import random
 
 import numpy as np
@@ -30,6 +31,8 @@ run_list, batch_list, max_iter_list, stop_list, n_better_solution = [], [], [], 
 random.seed(0)
 np.random.seed(0)
 data_set_idx = 0
+
+
 
 
 for dim in [20, 50, 100, 150, 250]:
