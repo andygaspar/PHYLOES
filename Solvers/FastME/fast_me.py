@@ -51,7 +51,6 @@ class FastMeSolver(Solver):
                     csvfile.write(compute_multiple_newick(self.init_topology))
         t = time.time()
         r = range(self.n_taxa)
-        print("val ", np.sum([self.d[i, j] * self.np_powers[self.init_topology[i, j]] for i in r for j in r]))
         os.system(self.path + "fastme -i " + self.path + "mat.mat " + self.flags)
         self.solve_time = time.time() - t
 

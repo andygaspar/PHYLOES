@@ -1,6 +1,7 @@
 import ctypes
 import os
 import random
+import time
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,7 @@ random.seed(0)
 np.random.seed(0)
 data_set_idx = 0
 
-dim = 200
+dim = 250
 
 d = np.around(data_set.get_random_mat(dim), 20)
 d = d/np.max(d)
@@ -41,36 +42,59 @@ d = d/np.max(d)
 
 
 # lib.test.restype = ctypes.c_void_p
+batch_size = 8
 
-
-phyloes = PhyloES2(d, batch=10, max_iterations=100)
+phyloes = PhyloES2(d, batch=batch_size, max_iterations=100)
 init_mats = phyloes.initial_adj_mat(phyloes.device, phyloes.batch)
 obj_vals, adj_mats = random_trees_generator(3, phyloes.d, init_mats, phyloes.n_taxa, phyloes.powers, phyloes.device)
 adj_mat_np = adj_mats.numpy().astype(dtype=np.int32)
 d = d.astype(np.double)
+fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
+                    logs=False)
 
 fast_cpp = FastCpp()
+t = time.time()
+results = fast_cpp.run_parallel(fast.d, adj_mat_np, phyloes.n_taxa, phyloes.m, batch_size)
+print("population size", batch_size)
+print("available cores", fast_cpp.numProcs)
+print('parallel time', time.time() - t)
+res_obj = [fast.compute_obj_val_from_adj_mat(a, fast.d, dim) for a in results]
+
+
+fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False, logs=False)
+
+tau = phyloes.get_tau_tensors(adj_mats).to('cpu')
+fast.update_topology(tau, batch_size)
+fast.solve_timed()
+
+print("old fastme with parallel file time", fast.time)
+
 # 3.3116201441751842
-for a in adj_mat_np:
-    fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
-                        logs=True)
-    print("kkkkkkkkkkkkkk")
-    print("length initial", fast.compute_obj_val_from_adj_mat(a, fast.d, dim))
-    res = fast_cpp.test(fast.d, a, phyloes.n_taxa)
-    print(fast.compute_obj_val_from_adj_mat(res, fast.d, dim))
-    # print(res)
-
-    fast.update_topology(fast.get_tau(a))
-    fast.solve()
-    # print(fast.solution)
-
-    # print(np.array_equal(res, fast.solution))
-
-    print(fast.obj_val)
-    print("ttttttttttttttttttttttttt")
-    # print(d)
-    # print(a)
-    # print(fast_cpp.run(d, a, phyloes.n_taxa, phyloes.m))
+# for a in adj_mat_np:
+#     fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
+#                         logs=False)
+#     print("kkkkkkkkkkkkkk")
+#     print("length initial", fast.compute_obj_val_from_adj_mat(a, fast.d, dim))
+#     t = time.time()
+#     res = fast_cpp.test(fast.d, a, phyloes.n_taxa)
+#     print("da file ", fast.compute_obj_val_from_adj_mat(res, fast.d, dim), time.time()-t)
+#     # print(res)
+#
+#     fast.update_topology(fast.get_tau(a))
+#     fast.solve_timed()
+#     print("fast normale", fast.time)
+#     # print(fast.solution)
+#
+#     # print(np.array_equal(res, fast.solution))
+#
+#     print(fast.obj_val)
+#
+#     # print(d)
+#     # print(a)
+#     t = time.time()
+#     res2 = fast_cpp.run(fast.d, a, phyloes.n_taxa, phyloes.m)
+#     print("cpp ", fast.compute_obj_val_from_adj_mat(res2, fast.d, dim), time.time() - t)
+#     print("ttttttttttttttttttttttttt\n")
 
 # os.system("Solvers/fast_cpp/fast_me")
 #
