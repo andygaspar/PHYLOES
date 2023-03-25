@@ -28,7 +28,7 @@
 // #include "distance.h"
 #include "initialiser.h"
 
-void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m);
+void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m, double & obj_val, int & nni_count, int & spr_count);
 	
 tree *ImproveTree (tree *T0, double **D, double **A,
 	int *nniCount, int *sprCount);

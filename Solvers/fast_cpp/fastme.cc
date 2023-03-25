@@ -3,7 +3,7 @@
 
 
 
-void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m)
+void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m, double & obj_val, int & nni_count, int & spr_count)
 {
 
 	time_t t_beg, t_end;
@@ -46,6 +46,10 @@ void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m)
 	// explainedVariance (D, T, numSpecies, options->precision, options->input_type, options->fpO_stat_file);
 
 	deleteMatrix(A, m);
+
+	obj_val = T -> weight;
+	nni_count = nniCount;
+	spr_count = sprCount;
 
 }
 

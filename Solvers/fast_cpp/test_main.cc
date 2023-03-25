@@ -116,7 +116,10 @@ int main () {
     clock_t start, end;
     start = clock();
     int* solution_mat = new int[m*m];
-    run(D, init_adj, solution_mat, n_taxa, m);
+    double obj_val;
+    int nni_count;
+    int spr_count;
+    run(D, init_adj, solution_mat, n_taxa, m, obj_val, nni_count, spr_count);
     end = clock();
 
     double time_taken = double(end - start) / double(CLOCKS_PER_SEC);

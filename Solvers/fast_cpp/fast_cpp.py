@@ -5,6 +5,15 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 
 
+class Result(ctypes.Structure):
+    _fields_ = [
+        ('nni_counts', ctypes.c_int),
+        ('spr_counts', ctypes.c_int),
+        ('solution_adjs', ctypes.POINTER(ctypes.c_int)),
+        ('objs', ctypes.POINTER(ctypes.c_double)),
+    ]
+
+
 class FastCpp:
 
     def __init__(self):
@@ -17,6 +26,9 @@ class FastCpp:
 
         self.lib.test_parallel.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+        self.lib.test_obj.argtypes = []
+        self.lib.test_obj.restype = ctypes.POINTER(Result)
+        self.lib.test_parallel.restype = ctypes.POINTER(Result)
 
     def test(self, d, adj_mat, n_taxa):
         np.savetxt("Solvers/fast_cpp/mat", d, fmt='%.19f', delimiter=' ')
@@ -34,9 +46,21 @@ class FastCpp:
         return adj
 
     def run_parallel(self, d, adj_mats, n_taxa, m, population_size):
-        self.lib.test_parallel.restype = ndpointer(dtype=ctypes.c_int32, shape=(population_size, m, m))
-        adjs = self.lib.test_parallel(d.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                     adj_mats.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)),
-                                     ctypes.c_int(n_taxa), ctypes.c_int(m), ctypes.c_int(population_size),
-                                     ctypes.c_int(self.numProcs))
-        return adjs
+        run_results = self.lib.test_parallel(d.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                                             adj_mats.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)),
+                                             ctypes.c_int(n_taxa), ctypes.c_int(m), ctypes.c_int(population_size),
+                                             ctypes.c_int(self.numProcs))
+
+        adjs = np.ctypeslib.as_array(run_results.contents.solution_adjs, shape=adj_mats.shape)
+        objs = np.array(run_results.contents.objs[:population_size])
+        nni_counts = run_results.contents.nni_counts
+        spr_counts = run_results.contents.spr_counts
+
+        return adjs, objs, nni_counts, spr_counts
+
+    def test_return_object(self):
+        test = self.lib.test_obj()
+        objs = np.array(test.contents.objs[:10])
+        adjs = np.array(test.contents.solution_adjs[:10])
+
+        p = 0

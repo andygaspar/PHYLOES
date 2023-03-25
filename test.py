@@ -34,7 +34,7 @@ random.seed(0)
 np.random.seed(0)
 data_set_idx = 0
 
-dim = 250
+dim = 150
 
 d = np.around(data_set.get_random_mat(dim), 20)
 d = d/np.max(d)
@@ -53,6 +53,10 @@ fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, tria
                     logs=False)
 
 fast_cpp = FastCpp()
+
+
+fast_cpp.test_return_object()
+
 t = time.time()
 results = fast_cpp.run_parallel(fast.d, adj_mat_np, phyloes.n_taxa, phyloes.m, batch_size)
 print("population size", batch_size)

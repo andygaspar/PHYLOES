@@ -2,6 +2,8 @@
 #include <iostream>
 #include <omp.h>
 #include <sched.h>
+#include "results.h"
+
 
 extern "C" {
 
@@ -16,7 +18,10 @@ extern "C" {
         for(i = 0; i< m; i++) A[i] = &init_adj[i*m];
                 
         int* solution_mat = new int[m*m];
-        run(D, A, solution_mat, n_taxa, m);
+        double obj_val;
+        int nni_count;
+        int spr_count;
+        run(D, A, solution_mat, n_taxa, m, obj_val, nni_count, spr_count);
 
         if (D!= nullptr) delete[] D;
         if (A!= nullptr) delete[] A;
@@ -28,7 +33,7 @@ extern "C" {
 
 
 
-    int* test_parallel (double* d, int* init_adj, int n_taxa, int m, int population_size, int num_procs) {
+    results* test_parallel (double* d, int* init_adj, int n_taxa, int m, int population_size, int num_procs) {
 
 
         double ** D = new double*[n_taxa];
@@ -41,21 +46,62 @@ extern "C" {
         int *** A = new int**[population_size];
         int* solution_mat = new int[population_size*mat_size];
 
+        
+
+        double* obj_vals = new double[population_size];
+        int * nni_counts = new int[population_size];
+        int * spr_counts = new int[population_size];
+
+
 
         omp_set_num_threads(num_procs);
-        #pragma omp parallel for schedule(static) shared(d)
+        #pragma omp parallel for schedule(static) shared(A, d)
         for(t = 0; t < population_size; t++) {
             A[t]= new int*[m];
             for(i = 0; i< m; i++) A[t][i] = &init_adj[t*mat_size + i*m];
                 
-            
-            run(D, A[t], &solution_mat[t*mat_size], n_taxa, m);
+            run(D, A[t], &solution_mat[t*mat_size], n_taxa, m, obj_vals[t], nni_counts[t], spr_counts[t]);
         }
 
         if (D!= nullptr) delete[] D;
         if (A!= nullptr) delete[] A;
 
-        return solution_mat;
+        for(t = 0; t< population_size; t++) std::cout<<obj_vals[t]<<" ";
+        std::cout<<std::endl;
+
+        results* res = new results[1];
+        res -> nni_counts = 0;
+        res -> spr_counts = 0;
+        res -> solution_adjs = solution_mat;
+        res -> objs = obj_vals;
+
+        for(t = 0; t < population_size; t++){
+            res -> nni_counts += nni_counts[t];
+            res -> spr_counts += spr_counts[t];
+        }
+        std::cout<<res->spr_counts<<"   "<<res->nni_counts<<"    counts "<<std::endl;
+
+        return res;
         }
 
+
+    results* test_obj(){
+
+        int * adj = new int[10];
+        double* obj_vals = new double[10];
+
+        for(int i=0; i< 10; i ++ ) {
+            adj[i] = 2*i;
+            obj_vals[i] = 0.2*i;
+        }
+        results* obj = new results[1];
+        obj ->objs = obj_vals; obj->nni_counts=4; obj->spr_counts=3; obj->solution_adjs=adj;
+        std::cout<<"fjfjfjfjf"<< obj->spr_counts<<std::endl;
+
+        return obj;
+    }
+
 }
+
+
+
