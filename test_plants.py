@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 
 from Solvers.FastME.fast_me import FastMeSolver
+from Solvers.PhyloES.phyloes_cpp import PhyloEScpp
 from Solvers.PhyloES.phyloes_parallel import PhyloES2
 from Solvers.RandomFastME.random_fast_me import RandomFastME
 from Solvers.PhyloES.phyloes import PhyloES
@@ -35,7 +36,7 @@ data_set_idx = 0
 
 
 
-for dim in [20, 50, 100, 150, 250]:
+for dim in [100, 150, 250]:
     print('*************** ', dim)
     for problem in range(problems):
 
@@ -43,7 +44,7 @@ for dim in [20, 50, 100, 150, 250]:
         d = np.around(data_set.get_random_mat(dim), 20)
         d = d/np.max(d)
 
-        for batch in [2, 5, 10, 20]:
+        for batch in [5, 10, 20]:
             for max_iter in [50, 100, 200]:
                 for run in range(run_per_problem):
                     print(dim, batch, max_iter, run)
@@ -54,9 +55,14 @@ for dim in [20, 50, 100, 150, 250]:
 
                     phyloes = PhyloES2(d, batch=batch, max_iterations=max_iter)
                     phyloes.solve_timed()
-                    # print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations)
+                    print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations)
                     phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
                     stop_list.append(phyloes.stop_criterion)
+
+                    phyloes_cpp = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
+                    phyloes_cpp.solve_timed()
+                    print("phyloes CPP  time:", phyloes_cpp.time, '   obj:', phyloes_cpp.obj_val, '   iterations', phyloes_cpp.iterations)
+
                     # print(rand_tj_tj)
                     # print(rand_tj_tj)
 
@@ -70,7 +76,7 @@ for dim in [20, 50, 100, 150, 250]:
                     fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
                                         logs=False)
                     fast.solve_all_flags()
-                    # print("fast  time:",  fast.time, '   obj:', fast.obj_val)
+                    print("fast  time:",  fast.time, '   obj:', fast.obj_val)
                     fast_tj = tuple(phyloes.tree_climb(torch.tensor(fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
                     # print(fast_tj)
                     result_run += [fast.obj_val, rand_fast.obj_val,  phyloes.obj_val, fast.time, rand_fast.time,

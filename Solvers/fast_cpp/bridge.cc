@@ -35,13 +35,12 @@ extern "C" {
 
     results* test_parallel (double* d, int* init_adj, int n_taxa, int m, int population_size, int num_procs) {
 
-
+        
         double ** D = new double*[n_taxa];
         int i,j,t, mat_size;
         mat_size = m*m;
 
         for(i = 0; i< n_taxa; i++) D[i] = &d[i*n_taxa];
-
 
         int *** A = new int**[population_size];
         int* solution_mat = new int[population_size*mat_size];
@@ -63,12 +62,6 @@ extern "C" {
             run(D, A[t], &solution_mat[t*mat_size], n_taxa, m, obj_vals[t], nni_counts[t], spr_counts[t]);
         }
 
-        if (D!= nullptr) delete[] D;
-        if (A!= nullptr) delete[] A;
-
-        for(t = 0; t< population_size; t++) std::cout<<obj_vals[t]<<" ";
-        std::cout<<std::endl;
-
         results* res = new results[1];
         res -> nni_counts = 0;
         res -> spr_counts = 0;
@@ -76,10 +69,16 @@ extern "C" {
         res -> objs = obj_vals;
 
         for(t = 0; t < population_size; t++){
+            delete[] A[t];
             res -> nni_counts += nni_counts[t];
             res -> spr_counts += spr_counts[t];
+            // std::cout<<obj_vals[t]<<" ";
         }
-        std::cout<<res->spr_counts<<"   "<<res->nni_counts<<"    counts "<<std::endl;
+        // std::cout<<std::endl;
+        delete[] D;
+        delete[] A; 
+        delete[] nni_counts;
+        delete[] spr_counts;
 
         return res;
         }
