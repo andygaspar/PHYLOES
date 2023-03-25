@@ -8,7 +8,7 @@ from Solvers.solver import Solver
 
 
 class PhyloEScpp(Solver):
-    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=10):
+    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=50):
         super().__init__(d)
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
@@ -38,24 +38,20 @@ class PhyloEScpp(Solver):
         not_improved_counter = 0
         combs, i = 2, 0
         while combs > 1 and i < self.max_iterations and not_improved_counter < self.max_non_improve_iter:
-            best_val, adj_mats = self.run_fast_me(adj_mats)
+            obj_vals, adj_mats = self.run_fast_me(adj_mats)
             best = torch.argmin(obj_vals)
 
-            if best_val[best] < run_val:
-                run_val, run_sol = best_val[best], adj_mats[best]
             if run_val < self.obj_val:
-                self.obj_val, self.solution = run_val, run_sol
+                self.obj_val, self.solution = obj_vals[best], adj_mats[best]
                 not_improved_counter = 0
             else:
                 not_improved_counter += 1
 
-            trajectories = self.back_track(adj_mats, best_val)
+            trajectories = self.back_track(adj_mats, obj_vals)
             tj[i*self.batch: (i+1)*self.batch] = trajectories
-            objs[i*self.batch: (i+1)*self.batch] = best_val
+            objs[i*self.batch: (i+1)*self.batch] = obj_vals
             init_mats = self.initial_adj_mat(self.device, self.batch)
-            combs, obj_vals, adj_mats = self.distribution_policy(init_mats, tj, objs)
-            best = torch.argmin(obj_vals)
-            run_val, run_sol = obj_vals[best], adj_mats[best]
+            combs, adj_mats = self.distribution_policy(init_mats, tj, objs)
             i += 1
 
         best_val, adj_mats = self.run_fast_me(adj_mats)
@@ -138,8 +134,7 @@ class PhyloEScpp(Solver):
 
         # print('combs', combs)
 
-        obj_vals = self.compute_obj_val_batch(adj_mats, self.d, self.powers, self.n_taxa, self.device)
-        return combs, obj_vals, adj_mats
+        return combs, adj_mats
 
     def run_fast_me(self, adj_mats):
         mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)

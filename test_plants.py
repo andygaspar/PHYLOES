@@ -34,7 +34,7 @@ np.random.seed(0)
 data_set_idx = 0
 
 
-
+j = 0
 
 for dim in [100, 150, 250]:
     print('*************** ', dim)
@@ -45,23 +45,23 @@ for dim in [100, 150, 250]:
         d = d/np.max(d)
 
         for batch in [5, 10, 20]:
-            for max_iter in [50, 100, 200]:
+            for max_iter in [100, 200]:
                 for run in range(run_per_problem):
                     print(dim, batch, max_iter, run)
                     result_run = [data_set_idx, dim, problem]
                     run_list.append(run)
                     batch_list.append(batch)
                     max_iter_list.append(max_iter)
-
+                    random.seed(j)
                     phyloes = PhyloES2(d, batch=batch, max_iterations=max_iter)
                     phyloes.solve_timed()
-                    print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations)
+                    print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations, '  stop', phyloes.stop_criterion)
                     phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
                     stop_list.append(phyloes.stop_criterion)
-
+                    random.seed(j)
                     phyloes_cpp = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
                     phyloes_cpp.solve_timed()
-                    print("phyloes CPP  time:", phyloes_cpp.time, '   obj:', phyloes_cpp.obj_val, '   iterations', phyloes_cpp.iterations)
+                    print("phyloes CPP  time:", phyloes_cpp.time, '   obj:', phyloes_cpp.obj_val, '   iterations', phyloes_cpp.iterations, '  stop', phyloes_cpp.stop_criterion)
 
                     # print(rand_tj_tj)
                     # print(rand_tj_tj)
@@ -83,6 +83,8 @@ for dim in [100, 150, 250]:
                                    phyloes.time, fast.method]
                     result_run += [fast_tj, rand_fast_tj, phyloes_tj]
                     result_list.append(result_run)
+
+                    j += 1
 
 
 
