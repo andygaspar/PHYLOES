@@ -8,7 +8,7 @@ from Solvers.solver import Solver
 
 
 class PhyloEScpp(Solver):
-    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=1000):
+    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=50):
         super().__init__(d)
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
