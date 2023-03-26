@@ -26,7 +26,7 @@ class RandomFastMEcpp(Solver):
     def solve(self, iterations, ob_init_val=10, sol_init=None, count_solutions=False):
         best_val, best_sol = 10 ** 5, sol_init
         self.better_solutions.append(sol_init)
-
+        tot_iter = 0
         left = iterations
         while left > 0:
             batch = min([self.numProcs, left])
@@ -36,6 +36,7 @@ class RandomFastMEcpp(Solver):
             mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)
             adjs, objs, nni_counts, spr_counts = \
                 self.fast_me_solver.run_parallel(self.d_np, mats, self.n_taxa, self.m, batch)
+            tot_iter += objs.shape[0]
             self.nni_counter += nni_counts
             self.spr_counter += spr_counts
 
@@ -43,7 +44,6 @@ class RandomFastMEcpp(Solver):
             if objs[best_val_idx] < best_val:
                 best_val, best_sol = objs[best_val_idx], adjs[best_val_idx]
                 # self.best_iteration = i
-
         self.solution = best_sol
         self.obj_val = best_val
         self.T = self.get_tau(self.solution)

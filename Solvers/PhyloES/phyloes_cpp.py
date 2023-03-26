@@ -26,14 +26,18 @@ class PhyloEScpp(Solver):
         self.max_non_improve_iter = max_non_improve_iter
         self.stop_criterion = None
 
+        self.obj_vals = None
+
     def solve(self):
         self.obj_val = 10**5
         init_mats = self.initial_adj_mat(self.device, self.batch)
         obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers, self.device)
         best = torch.argmin(obj_vals)
         run_val, run_sol = obj_vals[best], adj_mats[best]
-        tj = torch.zeros((self.max_iterations*self.batch, self.n_taxa - 3), device=self.device, dtype=torch.long)
-        objs = torch.ones(self.max_iterations*self.batch, device=self.device)*100
+
+        tj = torch.zeros((2 * self.batch, self.n_taxa - 3), device=self.device, dtype=torch.long)
+        objs = torch.ones(2 * self.batch, device=self.device) * 1000
+
 
         not_improved_counter = 0
         combs, i = 2, 0
@@ -48,10 +52,11 @@ class PhyloEScpp(Solver):
                 not_improved_counter += 1
 
             trajectories = self.back_track(adj_mats, obj_vals)
-            tj[i*self.batch: (i+1)*self.batch] = trajectories
-            objs[i*self.batch: (i+1)*self.batch] = obj_vals
+            tj[self.batch: 2*self.batch] = trajectories
+            objs[self.batch: 2*self.batch] = obj_vals
+
             init_mats = self.initial_adj_mat(self.device, self.batch)
-            combs, adj_mats = self.distribution_policy(init_mats, tj, objs)
+            combs, adj_mats, objs, tj = self.distribution_policy(init_mats, tj, objs)
             i += 1
 
         best_val, adj_mats = self.run_fast_me(adj_mats)
@@ -118,11 +123,13 @@ class PhyloEScpp(Solver):
 
     def distribution_policy(self, adj_mats, trajectories, obj_vals):
         batch_size = adj_mats.shape[0]
-        idxs = torch.argsort(obj_vals)
-        trajectories = trajectories[idxs][:batch_size]
+        obj_vals, idxs = torch.sort(obj_vals)
+        trajectories = trajectories[idxs]
+        tj = trajectories[:batch_size]
+
         combs = 1
         for step in range(3, self.n_taxa):
-            c = torch.unique(trajectories[:, step - 3], return_counts=True)
+            c = torch.unique(tj[:, step - 3], return_counts=True)
             # print(c[0], c[1])
             combs *= c[1].shape[0]
             idxs = random.choices(c[0], k=batch_size)
@@ -134,7 +141,7 @@ class PhyloEScpp(Solver):
 
         # print('combs', combs)
 
-        return combs, adj_mats
+        return combs, adj_mats, obj_vals, trajectories
 
     def run_fast_me(self, adj_mats):
         mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)

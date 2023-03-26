@@ -11,6 +11,7 @@ from Solvers.PhyloES.phyloes_parallel import PhyloES2
 from Solvers.RandomFastME.random_fast_me import RandomFastME
 from Solvers.PhyloES.phyloes import PhyloES
 from Data_.data_loader import DistanceData
+from Solvers.RandomFastME.random_fast_me_cpp import RandomFastMEcpp
 
 distances = DistanceData()
 distances.print_dataset_names()
@@ -36,7 +37,7 @@ data_set_idx = 0
 
 j = 0
 
-for dim in [250]:
+for dim in [150, 200]:
     print('*************** ', dim)
     for problem in range(problems):
 
@@ -52,26 +53,34 @@ for dim in [250]:
                     run_list.append(run)
                     batch_list.append(batch)
                     max_iter_list.append(max_iter)
+
+                    # random.seed(j)
+                    # phyloes = PhyloES2(d, batch=batch, max_iterations=max_iter)
+                    # phyloes.solve_timed()
+                    # print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations, '  stop', phyloes.stop_criterion)
+                    # phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
+                    # stop_list.append(phyloes.stop_criterion)
+
                     random.seed(j)
-                    phyloes = PhyloES2(d, batch=batch, max_iterations=max_iter)
+                    phyloes = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
                     phyloes.solve_timed()
-                    print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations, '  stop', phyloes.stop_criterion)
-                    phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
-                    stop_list.append(phyloes.stop_criterion)
-
-                    random.seed(j)
-                    phyloes_cpp = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
-                    phyloes_cpp.solve_timed()
-                    print("phyloes CPP  time:", phyloes_cpp.time, '   obj:', phyloes_cpp.obj_val, '   iterations', phyloes_cpp.iterations, '  stop', phyloes_cpp.stop_criterion)
+                    print("phyloes CPP  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations',
+                          phyloes.iterations, '  stop', phyloes.stop_criterion)
 
                     # print(rand_tj_tj)
                     # print(rand_tj_tj)
-
-                    rand_fast = RandomFastME(d, parallel=False, spr=True)
+                    # random.seed(j)
+                    # rand_fast = RandomFastME(d, parallel=False, spr=True)
                     # rand_fast.solve_timed(phyloes.iterations)
                     # print("rand_fa  time:", rand_fast.time, '   obj:', rand_fast.obj_val, '   iterations', phyloes.iterations)
                     # rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
-                    # print(rand_fast)
+                    # # print(rand_fast)
+
+                    random.seed(j)
+                    rand_fast = RandomFastMEcpp(d, parallel=False, spr=True)
+                    rand_fast.solve_timed(phyloes.iterations)
+                    print("rand_fa  time:", rand_fast.time, '   obj:', rand_fast.obj_val, '   iterations',
+                          phyloes.iterations)
 
                     #
                     fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
