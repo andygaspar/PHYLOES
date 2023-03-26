@@ -105,8 +105,7 @@ edge *depthFirstTraverse (tree *T, edge *e)
 					 * sibling and everything below e, so we move up */
 			f = e->tail->parentEdge;
 	}
-
-	return (f);
+	return f;
 }
 
 /*********************************************************/

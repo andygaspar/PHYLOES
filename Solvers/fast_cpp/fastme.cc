@@ -16,7 +16,7 @@ void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m, doubl
 
 	T = adj_to_tree(sparse_A, n_taxa, m);
 	for (int i = 0; i < m; i++)
-		delete sparse_A[i];
+		delete[] sparse_A[i];
 	delete[] sparse_A;
 
 	int i = 0;
@@ -50,6 +50,8 @@ void run(double **d, int **init_adj, int* solution_mat, int n_taxa, int m, doubl
 	obj_val = T -> weight;
 	nni_count = nniCount;
 	spr_count = sprCount;
+
+	deleteTree(T);
 
 }
 

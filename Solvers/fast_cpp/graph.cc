@@ -20,6 +20,7 @@
 
 
 #include "graph.h"
+#include <iostream>
 
 /*********************************************************/
 
@@ -138,7 +139,7 @@ void deleteSubTree (edge *e)
 		deleteNode(v);
 
 	if (nullptr != e)
-		e = nullptr;
+		delete e;
 
 	return;
 }
@@ -147,16 +148,14 @@ void deleteSubTree (edge *e)
 
 void deleteTree (tree *T)
 {
-	node *v;
-
-	v = T->root;
-	if (nullptr != v->leftEdge)
-		deleteSubTree (v->leftEdge);
+	if (nullptr != T->root->leftEdge)
+		deleteSubTree (T->root->leftEdge);
 
 	if (nullptr != T->root)
 		deleteNode(T->root);
+	
 
-	if (nullptr != T)
+	if (nullptr != T) delete T;
 		T = nullptr;
 
 	return;

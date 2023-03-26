@@ -92,12 +92,13 @@ void bNNItopSwitch (edge *e, int direction, double **A)
 
 void bNNI (tree *T, double **avgDistArray, int *count)
 {
-	edge *e = new edge;
+	edge *e;
 	edge **edgeArray;
 	int *p, *location, *q;
 	int i;
 	int possibleSwaps;
 	double *weights;
+	
 	
 	p = initPerm (T->size+1);
 	q = initPerm (T->size+1);
@@ -117,7 +118,7 @@ void bNNI (tree *T, double **avgDistArray, int *count)
 
 
 	e = findBottomLeft (T->root->leftEdge);
-	while (NULL != e)
+	while (nullptr != e)
 	{
 		edgeArray[e->head->index+1] = e;
 		location[e->head->index+1] = bNNIEdgeTest (e, T, avgDistArray,
@@ -149,8 +150,8 @@ void bNNI (tree *T, double **avgDistArray, int *count)
 		/* but we must retest the other edges of T */
 		/* CHANGE 2/28/2003 expanding retesting to _all_ edges of T */
 
-		e = depthFirstTraverse (T, NULL);
-		while (NULL != e)
+		e = depthFirstTraverse (T, nullptr);
+		while (nullptr != e)
 		{
 			bNNIRetestEdge (p, q, e, T, avgDistArray, weights, location, &possibleSwaps);
 			e = depthFirstTraverse (T, e);
@@ -185,11 +186,11 @@ void updateSubTreeAfterNNI (double **A, node *v, edge *rootEdge,
 	{
 		case 1 :	/* UP = 1 rootEdge is below the center edge of the NNI
 					 * recursive calls to subtrees, if necessary */
-			if (NULL != rootEdge->head->leftEdge)
+			if (nullptr != rootEdge->head->leftEdge)
 				updateSubTreeAfterNNI (A, v, rootEdge->head->leftEdge,
 					closer, further, 0.5 * dcoeff, 1);
 
-			if (NULL != rootEdge->head->rightEdge)
+			if (nullptr != rootEdge->head->rightEdge)
 				updateSubTreeAfterNNI (A, v, rootEdge->head->rightEdge,
 					closer, further, 0.5 * dcoeff, 1);
 
@@ -203,11 +204,11 @@ void updateSubTreeAfterNNI (double **A, node *v, edge *rootEdge,
 
 		case 2 :	/* DOWN =2 rootEdge is above the center edge of the NNI */
 			sib = siblingEdge (rootEdge);
-			if (NULL != sib)
+			if (nullptr != sib)
 				updateSubTreeAfterNNI (A, v, sib, closer, further,
 					0.5 * dcoeff, 5);
 
-			if (NULL != rootEdge->tail->parentEdge)
+			if (nullptr != rootEdge->tail->parentEdge)
 				updateSubTreeAfterNNI (A, v, rootEdge->tail->parentEdge,
 					closer, further, 0.5 * dcoeff, 2);
 
@@ -219,11 +220,11 @@ void updateSubTreeAfterNNI (double **A, node *v, edge *rootEdge,
 			break;
 
 		case 5 :	/* rootEdge is in subtree skew to v */
-			if (NULL != rootEdge->head->leftEdge)
+			if (nullptr != rootEdge->head->leftEdge)
 				updateSubTreeAfterNNI (A, v, rootEdge->head->leftEdge,
 					closer, further, 0.5 * dcoeff, 5);
 
-			if (NULL != rootEdge->head->rightEdge)
+			if (nullptr != rootEdge->head->rightEdge)
 				updateSubTreeAfterNNI (A, v, rootEdge->head->rightEdge,
 					closer, further, 0.5 * dcoeff, 5);
 

@@ -26,7 +26,7 @@ using string = std::string;
 
 int** fill_int_matrix(int m) {
     int** matrix = new int*[m];
-    std::fstream file("Solvers/fast_cpp/init_mat");
+    std::fstream file("../init_mat");
     std::string line;
     // std::cout<<" ***\n";
     int row=0;
@@ -51,7 +51,7 @@ int** fill_int_matrix(int m) {
 
 double** fill_matrix(int n_taxa) {
     double** matrix = new double*[n_taxa];
-    std::fstream file("Solvers/fast_cpp/mat");
+    std::fstream file("../mat");
     std::string line;
     // std::cout<<" ***\n";
     int row=0;
@@ -74,7 +74,7 @@ double** fill_matrix(int n_taxa) {
 
 int get_n_taxa() {
 
-    std::fstream file("Solvers/fast_cpp/n_taxa");
+    std::fstream file("../n_taxa");
     std::string line;
     int n_taxa;
     while (getline(file, line)){
@@ -91,7 +91,7 @@ int get_n_taxa() {
 void save_mat(int* adj_mat, int mat_size){
     std::fstream myfile;
 
-    myfile.open("Solvers/fast_cpp/result_adj_mat.txt",std::fstream::out);
+    myfile.open("../result_adj_mat.txt",std::fstream::out);
 
     for (int i=0; i< mat_size;i++) //This variable is for each row below the x 
     {        
@@ -135,6 +135,6 @@ int main () {
     }
 
     delete[] D; delete[] init_adj; delete[] solution_mat;
-    // std::cout<<"done"<<std::endl;
+    std::cout<<"done"<<std::endl;
     
 }
