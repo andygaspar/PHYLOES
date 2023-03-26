@@ -2,13 +2,13 @@ import random
 
 import numpy as np
 import torch
-from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator, adjust_matrices
+from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator_and_objs, adjust_matrices
 from Solvers.fast_cpp.fast_cpp import FastCpp
 from Solvers.solver import Solver
 
 
 class PhyloEScpp(Solver):
-    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=50):
+    def __init__(self, d, batch=10, max_iterations=25, max_non_improve_iter=1000):
         super().__init__(d)
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
@@ -29,7 +29,7 @@ class PhyloEScpp(Solver):
     def solve(self):
         self.obj_val = 10**5
         init_mats = self.initial_adj_mat(self.device, self.batch)
-        obj_vals, adj_mats = random_trees_generator(3, self.d, init_mats, self.n_taxa, self.powers, self.device)
+        obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers, self.device)
         best = torch.argmin(obj_vals)
         run_val, run_sol = obj_vals[best], adj_mats[best]
         tj = torch.zeros((self.max_iterations*self.batch, self.n_taxa - 3), device=self.device, dtype=torch.long)
@@ -142,7 +142,6 @@ class PhyloEScpp(Solver):
             self.fast_me_solver.run_parallel(self.d_np, mats, self.n_taxa, self.m, self.batch)
         self.nni_counter += nni_counts
         self.spr_counter += spr_counts
-        res = [self.compute_obj_val_from_adj_mat(a, self.d, self.batch) for a in adj_mats]
 
         return torch.tensor(objs, device=self.device), torch.tensor(adjs, device=self.device)
 

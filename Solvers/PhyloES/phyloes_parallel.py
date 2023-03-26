@@ -2,7 +2,7 @@ import random
 import torch
 from Solvers.FastME.fast_me import FastMeSolver
 
-from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator, adjust_matrices
+from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator_and_objs, adjust_matrices
 from Solvers.solver import Solver
 
 
@@ -29,7 +29,7 @@ class PhyloES2(Solver):
     def solve(self):
         self.obj_val = 10**5
         init_mats = self.initial_adj_mat(self.device, self.batch)
-        obj_vals, adj_mats = random_trees_generator(3, self.d, init_mats, self.n_taxa, self.powers, self.device)
+        obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers, self.device)
         best = torch.argmin(obj_vals)
         run_val, run_sol = obj_vals[best], adj_mats[best]
         tj = torch.zeros((self.max_iterations*self.batch, self.n_taxa - 3), device=self.device, dtype=torch.long)

@@ -4,7 +4,7 @@ import random
 from Solvers.solver import Solver
 
 
-def random_trees_generator(start, d, adj_mats, n_taxa, powers, device):
+def random_trees_generator(start, adj_mats, n_taxa):
     batch_size = adj_mats.shape[0]
     for step in range(start, n_taxa):
         choices = 3 + (step - 3) * 2
@@ -13,7 +13,11 @@ def random_trees_generator(start, d, adj_mats, n_taxa, powers, device):
         idxs_list = idxs_list[[range(batch_size)], rand_idxs, :]
         idxs_list = (idxs_list[:, :, 0], idxs_list[:, :, 1], idxs_list[:, :, 2])
         adj_mats = Solver.add_nodes(adj_mats, idxs_list, new_node_idx=step, n=n_taxa)
+    return adj_mats
 
+
+def random_trees_generator_and_objs(start, d, adj_mats, n_taxa, powers, device):
+    adj_mats = random_trees_generator(start, adj_mats, n_taxa)
     obj_vals = Solver.compute_obj_val_batch(adj_mats, d, powers, n_taxa, device)
     return obj_vals, adj_mats
 

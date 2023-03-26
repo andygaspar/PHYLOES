@@ -36,7 +36,7 @@ data_set_idx = 0
 
 j = 0
 
-for dim in [100, 150, 250]:
+for dim in [250]:
     print('*************** ', dim)
     for problem in range(problems):
 
@@ -44,7 +44,7 @@ for dim in [100, 150, 250]:
         d = np.around(data_set.get_random_mat(dim), 20)
         d = d/np.max(d)
 
-        for batch in [5, 10, 20]:
+        for batch in [10, 20]:
             for max_iter in [100, 200]:
                 for run in range(run_per_problem):
                     print(dim, batch, max_iter, run)
@@ -58,6 +58,7 @@ for dim in [100, 150, 250]:
                     print("phyloes  time:", phyloes.time, '   obj:', phyloes.obj_val, '   iterations', phyloes.iterations, '  stop', phyloes.stop_criterion)
                     phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
                     stop_list.append(phyloes.stop_criterion)
+
                     random.seed(j)
                     phyloes_cpp = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
                     phyloes_cpp.solve_timed()
@@ -67,9 +68,9 @@ for dim in [100, 150, 250]:
                     # print(rand_tj_tj)
 
                     rand_fast = RandomFastME(d, parallel=False, spr=True)
-                    rand_fast.solve_timed(phyloes.iterations)
+                    # rand_fast.solve_timed(phyloes.iterations)
                     # print("rand_fa  time:", rand_fast.time, '   obj:', rand_fast.obj_val, '   iterations', phyloes.iterations)
-                    rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
+                    # rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
                     # print(rand_fast)
 
                     #
@@ -81,7 +82,7 @@ for dim in [100, 150, 250]:
                     # print(fast_tj)
                     result_run += [fast.obj_val, rand_fast.obj_val,  phyloes.obj_val, fast.time, rand_fast.time,
                                    phyloes.time, fast.method]
-                    result_run += [fast_tj, rand_fast_tj, phyloes_tj]
+                    # result_run += [fast_tj, rand_fast_tj, phyloes_tj]
                     result_list.append(result_run)
 
                     j += 1

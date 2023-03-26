@@ -9,7 +9,7 @@ import torch
 from numpy.ctypeslib import ndpointer
 
 from Solvers.FastME.fast_me import FastMeSolver
-from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator
+from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator_and_objs
 from Solvers.PhyloES.phyloes_parallel import PhyloES2
 from Solvers.RandomFastME.random_fast_me import RandomFastME
 from Solvers.PhyloES.phyloes import PhyloES
@@ -46,7 +46,7 @@ batch_size = 8
 
 phyloes = PhyloES2(d, batch=batch_size, max_iterations=100)
 init_mats = phyloes.initial_adj_mat(phyloes.device, phyloes.batch)
-obj_vals, adj_mats = random_trees_generator(3, phyloes.d, init_mats, phyloes.n_taxa, phyloes.powers, phyloes.device)
+obj_vals, adj_mats = random_trees_generator_and_objs(3, phyloes.d, init_mats, phyloes.n_taxa, phyloes.powers, phyloes.device)
 adj_mat_np = adj_mats.numpy().astype(dtype=np.int32)
 d = d.astype(np.double)
 fast = FastMeSolver(d, bme=True, nni=True, digits=17, post_processing=True, triangular_inequality=False,
