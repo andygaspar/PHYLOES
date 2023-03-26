@@ -37,6 +37,7 @@ data_set_idx = 0
 
 j = 0
 
+
 for dim in [150, 200]:
     print('*************** ', dim)
     for problem in range(problems):
