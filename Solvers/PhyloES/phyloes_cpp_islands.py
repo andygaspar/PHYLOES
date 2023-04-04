@@ -25,7 +25,7 @@ class PhyloEScpp(Solver):
         self.n_trees = None
         self.fast_time = 0
         self.fast_me_solver = FastCpp()
-        self.nni_counter, self.spr_counter = [], []
+        self.nni_counter, self.spr_counter = 0, 0
         self.adaptive = True if type(batch) == list else False
         if self.adaptive:
             self.batch = sorted(batch, key=lambda t: t[0])
@@ -35,10 +35,6 @@ class PhyloEScpp(Solver):
         self.stop_criterion = None
 
         self.obj_vals = None
-
-        self.best_vals = []
-        self.worse_vals = []
-        self.iterations = None
 
     def solve(self):
 
@@ -76,8 +72,6 @@ class PhyloEScpp(Solver):
 
             init_mats = self.initial_adj_mat(self.device, batch)
             combs, adj_mats, objs, tj = self.distribution_policy(init_mats, tj, objs, batch)
-            self.best_vals.append(objs[0].item())
-            self.worse_vals.append(objs[batch-1].item())
             iteration += 1
 
         best_val, adj_mats = self.run_fast_me(adj_mats, batch)
@@ -92,7 +86,7 @@ class PhyloEScpp(Solver):
 
         self.stop_criterion = 'convergence' if combs == 1 else \
             ('max_iterations' if iteration == self.max_iterations else 'local_plateau')
-        self.iterations = iteration
+
         self.T = self.get_tau(self.solution.to('cpu'))
         self.d = self.d.to('cpu')
         self.obj_val = self.compute_obj()
@@ -177,7 +171,7 @@ class PhyloEScpp(Solver):
         mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)
         adjs, objs, nni_counts, spr_counts = \
             self.fast_me_solver.run_parallel(self.d_np, mats, self.n_taxa, self.m, batch)
-        self.nni_counter += [nni_counts]
-        self.spr_counter += [spr_counts]
+        self.nni_counter += nni_counts
+        self.spr_counter += spr_counts
 
         return torch.tensor(objs, device=self.device), torch.tensor(adjs, device=self.device)

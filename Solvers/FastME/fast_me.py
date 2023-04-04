@@ -19,7 +19,7 @@ warnings.simplefilter("ignore")
 class FastMeSolver(Solver):
 
     def __init__(self, d,
-                 bme=True, nni=True, digits=None, post_processing=False, init_topology=None,
+                 bme=True, nni=True, digits=None, post_processing=False, bootrstap=False, init_topology=None,
                  triangular_inequality=False, logs=False, num_topologies=1):
         super().__init__(d)
         self.path = 'Solvers/FastME/'
@@ -27,8 +27,9 @@ class FastMeSolver(Solver):
         self.flags = ''
         self.method = 'b' if bme else None
         self.nni = nni
-        self.digits = digits
         self.post_processing = post_processing
+        self.digits = digits
+        self.bootstrap = bootrstap
         self.triangular_inequality = triangular_inequality
         self.logs = logs
         self.num_topologies = num_topologies
@@ -50,7 +51,6 @@ class FastMeSolver(Solver):
                 with open(self.path + 'init_topology.nwk', 'w', newline='') as csvfile:
                     csvfile.write(compute_multiple_newick(self.init_topology))
         t = time.time()
-        r = range(self.n_taxa)
         os.system(self.path + "fastme -i " + self.path + "mat.mat " + self.flags)
         self.solve_time = time.time() - t
 
@@ -79,6 +79,8 @@ class FastMeSolver(Solver):
             self.flags += " -q "
         if self.digits is not None:
             self.flags += " -f " + str(self.digits) + " "
+        if self.bootstrap:
+            self.flags += " -b 100 "
         if self.init_topology is not None:
             self.flags += ' -u ' + self.path + 'init_topology.nwk'
         if not self.logs:
@@ -114,14 +116,14 @@ class FastMeSolver(Solver):
 
     def check_mat(self, adj_mat):
         taxa = np.array_equal(adj_mat[:self.n_taxa, self.n_taxa:].sum(axis=1), np.ones(self.n_taxa))
-        internals = np.array_equal(adj_mat[self.n_taxa:, :].sum(axis=1), np.ones(self.n_taxa)*3)
+        internals = np.array_equal(adj_mat[self.n_taxa:, :].sum(axis=1), np.ones(self.n_taxa) * 3)
         graph = nx.from_numpy_matrix(adj_mat)
         pos = nx.spring_layout(graph)
 
         nx.draw(graph, pos=pos, node_color=['green' if i < self.n_taxa else 'red' for i in range(self.m)],
                 with_labels=True, font_weight='bold')
         plt.show()
-        return taxa*internals
+        return taxa * internals
 
     def solve_all_flags(self):
         self.time = time.time()
@@ -145,8 +147,8 @@ class FastMeSolver(Solver):
         vals = []
         with open(file, newline='') as csvfile:
             reader = list(csv.reader(csvfile, delimiter='\n'))
-            for i,row in enumerate(reader):
-                if len(row)>0:
+            for i, row in enumerate(reader):
+                if len(row) > 0:
                     if row[0][:3] == '\tPe':
                         vals.append(float(reader[i - 1][0][32:]))
                     if row[0][:3] == '\tEx':

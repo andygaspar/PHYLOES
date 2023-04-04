@@ -26,7 +26,7 @@ using string = std::string;
 
 int** fill_int_matrix(int m) {
     int** matrix = new int*[m];
-    std::fstream file("../init_mat");
+    std::fstream file("init_mat");
     std::string line;
     // std::cout<<" ***\n";
     int row=0;
@@ -51,7 +51,7 @@ int** fill_int_matrix(int m) {
 
 double** fill_matrix(int n_taxa) {
     double** matrix = new double*[n_taxa];
-    std::fstream file("../mat");
+    std::fstream file("mat");
     std::string line;
     // std::cout<<" ***\n";
     int row=0;
@@ -74,7 +74,7 @@ double** fill_matrix(int n_taxa) {
 
 int get_n_taxa() {
 
-    std::fstream file("../n_taxa");
+    std::fstream file("n_taxa");
     std::string line;
     int n_taxa;
     while (getline(file, line)){
