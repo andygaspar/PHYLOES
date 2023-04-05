@@ -21,44 +21,31 @@ run_list, batch_list, max_iter_list, stop_list, n_better_solution = [], [], [], 
 
 result_list, best_list, worse_list, iterations = [], [], [], []
 
-max_iter = 1000
+max_iter = 10_000
 batch = [(0, 64), (5, 32), (25, 16)]
 
 files = []
 for (dir_path, dir_names, file_names) in os.walk('Data_/benchmarks/matrices/full_mats/'):
     files.extend(file_names)
-
+print(files)
+print(files[6][0])
+files = sorted(files)
+print(files)
 for file in files:
 
     run_per_problem = 10
-
-
-
     random.seed(0)
     np.random.seed(0)
     data_set_idx = 0
-
-
     j = 0
-
-    '''
-    result 32
-    
-    310477379381748
-    309760471457418
-    
-    phyloes CPP  time: 3511.304529428482    obj: 9.309610894796347    n_trees 2736   stop convergence
-    5.350451748033435
-    '''
-
-
-
-
 
     d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/full_mats/' + file), 10))
     # d = d/np.max(d)
-    d = d[:16, :16]
+    # d = d[:16, :16]
     print(file)
+
+    if file[0] == 'z':
+        d = d[:300, :300]
 
 
 
@@ -101,7 +88,7 @@ for file in files:
         fast.solve_all_flags()
         print("fast  time:",  fast.time, '   obj:', fast.obj_val)
         fast_tj = tuple(phyloes.tree_climb(torch.tensor(fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
-        # print(fast_tj)
+        print(fast_tj)
         result_run += [fast.obj_val, rand_fast.obj_val,  phyloes.obj_val, fast.time, rand_fast.time,
                        phyloes.time, fast.method, rand_fast.nni_counter, rand_fast.spr_counter, phyloes.nni_counter, phyloes.spr_counter]
         result_run += [fast_tj, rand_fast_tj, phyloes_tj]

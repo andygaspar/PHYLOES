@@ -11,7 +11,7 @@ from Solvers.solver import Solver
 
 class PhyloEScpp(Solver):
     def __init__(self, d, batch: Union[int, List[Tuple]] = 16, max_iterations=25, replace=False,
-                 max_non_improve_iter=None):
+                 max_non_improve_iter=None, min_tol=1e-8):
         super().__init__(d)
 
         self.d_np = self.d.astype(np.double)
@@ -22,6 +22,7 @@ class PhyloEScpp(Solver):
         self.best_iteration = None
         self.better_solutions = []
         self.max_iterations = max_iterations
+        self.min_tol = min_tol
         self.n_trees = None
         self.fast_time = 0
         self.fast_me_solver = FastCpp()
@@ -54,10 +55,11 @@ class PhyloEScpp(Solver):
 
         tj = torch.zeros((2 * batch, self.n_taxa - 3), device=self.device, dtype=torch.long)
         objs = torch.ones(2 * batch, device=self.device) * 1000
+        objs[batch - 1] = 10000
 
         not_improved_counter = 0
         combs = 2
-        while combs > 1 and iteration < self.max_iterations:
+        while combs > 1 and iteration < self.max_iterations and objs[batch-1] - objs[0] > self.min_tol:
             # print(iteration, batch, objs[:batch], self.nni_counter, self.spr_counter)
             obj_vals, adj_mats = self.run_fast_me(adj_mats, batch)
             best = torch.argmin(obj_vals)
@@ -79,6 +81,9 @@ class PhyloEScpp(Solver):
             self.best_vals.append(objs[0].item())
             self.worse_vals.append(objs[batch-1].item())
             iteration += 1
+            # print(combs)
+            # print((objs[15] - objs[0]).item())
+            # print([ob.item() for ob in objs[:16]])
 
         best_val, adj_mats = self.run_fast_me(adj_mats, batch)
         best = torch.argmin(obj_vals)
@@ -91,7 +96,8 @@ class PhyloEScpp(Solver):
         self.n_trees = iteration * batch
 
         self.stop_criterion = 'convergence' if combs == 1 else \
-            ('max_iterations' if iteration == self.max_iterations else 'local_plateau')
+            ('min_tol'if objs[batch-1] - objs[0] < self.min_tol else
+             ('max_iterations' if iteration == self.max_iterations else 'local_plateau'))
         self.iterations = iteration
         self.T = self.get_tau(self.solution.to('cpu'))
         self.d = self.d.to('cpu')
