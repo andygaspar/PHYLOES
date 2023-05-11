@@ -7,48 +7,37 @@ import torch
 
 from Solvers.FastME.fast_me import FastMeSolver
 from Solvers.PhyloES.phyloes_cpp import PhyloEScpp
-from Solvers.PhyloES.phyloes_parallel import PhyloES2
-from Solvers.RandomFastME.random_fast_me import RandomFastME
-from Solvers.PhyloES.phyloes import PhyloES
-from Data_.data_loader import DistanceData
+
 from Solvers.RandomFastME.random_fast_me_cpp import RandomFastMEcpp
 
-distances = DistanceData()
-distances.print_dataset_names()
-dataset_names = distances.get_dataset_names()
-data_set_list = []
-run_list, batch_list, max_iter_list, stop_list, n_better_solution = [], [], [], [], []
+torch.set_printoptions(precision=16)
 
-result_list, best_list, worse_list, iterations = [], [], [], []
+
+np.random.seed(0)
+random.seed(0)
+seed = 0
 
 max_iter = 10_000
 batch = [(0, 64), (5, 32), (25, 16)]
 
 files = []
-for (dir_path, dir_names, file_names) in os.walk('Data_/benchmarks/matrices/full_mats/'):
+for (dir_path, dir_names, file_names) in os.walk('Data_/benchmarks/matrices/experiment_mats/'):
     files.extend(file_names)
-print(files)
-print(files[6][0])
+
 files = sorted(files)
 print(files)
-for file in files:
 
-    run_per_problem = 10
-    random.seed(0)
-    np.random.seed(0)
-    data_set_idx = 0
-    j = 0
 
-    d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/full_mats/' + file), 10))
-    # d = d/np.max(d)
-    # d = d[:16, :16]
+for file in files[8:9]:
     print(file)
+    data_set_list = []
+    run_list, batch_list, max_iter_list, stop_list, n_better_solution = [], [], [], [], []
 
-    if file[0] == 'z':
-        d = d[:300, :300]
+    result_list, best_list, worse_list, iterations = [], [], [], []
 
+    run_per_problem = 1
 
-
+    d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/experiment_mats/' + file), 10))
 
     for run in range(run_per_problem):
         print('\n', d.shape[0], batch, max_iter, run)
@@ -57,9 +46,8 @@ for file in files:
         batch_list.append(batch)
         max_iter_list.append(max_iter)
 
-
-        random.seed(j)
-        phyloes = PhyloEScpp(d, batch=batch, max_iterations=max_iter)
+        random.seed(seed)
+        phyloes = PhyloEScpp(d, batch=batch, max_iterations=max_iter, replace=True)
         phyloes.solve_timed()
         print("phyloes CPP  time:", phyloes.time, '   obj:', phyloes.obj_val, '   n_trees',
               phyloes.n_trees, '  stop', phyloes.stop_criterion)
@@ -69,15 +57,9 @@ for file in files:
         worse_list.append(phyloes.worse_vals)
         iterations.append(phyloes.iterations)
 
-        # random.seed(j)
-        # phyloes = PhyloEScpp(d, batch=batch, max_iterations=max_iter, replace=True)
-        # phyloes.solve_timed()
-        # print("phyloes CPP replace time:", phyloes.time, '   obj:', phyloes.obj_val, '   n_trees',
-        #       phyloes.n_trees, '  stop', phyloes.stop_criterion)
-
-        random.seed(j)
+        random.seed(seed)
         rand_fast = RandomFastMEcpp(d, parallel=False, spr=True)
-        rand_fast.solve_timed(phyloes.n_trees)
+        rand_fast.solve_timed(800)#phyloes.n_trees)
         print("rand_fa  time:", rand_fast.time, '   obj:', rand_fast.obj_val, '   n_trees',
               phyloes.n_trees)
         rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
@@ -94,24 +76,22 @@ for file in files:
         result_run += [fast_tj, rand_fast_tj, phyloes_tj]
         result_list.append(result_run)
 
-        j += 1
+        seed += 1
 
 
+    df = pd.DataFrame(result_list, columns=['Taxa', 'Problem', 'fast_obj', 'random_obj', 'phyloes_obj', 'fast_time',
+                                                'rand_time', 'phyloes_time', 'fastMe_init', 'rf_nni', 'rf_spr', 'p_nni', 'p_spr', 'fast_traj', 'rand_traj',
+                                                'phyloes_tj'])
+    df['run'] = run_list
+    df['batch'] = batch_list
+    df['max_iter'] = max_iter_list
+    df['stop'] = stop_list
+    df['iterations'] = iterations
+    df['best_list'] = best_list
+    df['worst_list'] = worse_list
 
 
-df = pd.DataFrame(result_list, columns=['Taxa', 'Problem', 'fast_obj', 'random_obj', 'phyloes_obj', 'fast_time',
-                                            'rand_time', 'phyloes_time', 'fastMe_init', 'rf_nni', 'rf_spr', 'p_nni', 'p_spr', 'fast_traj', 'rand_traj',
-                                            'phyloes_tj'])
-df['run'] = run_list
-df['batch'] = batch_list
-df['max_iter'] = max_iter_list
-df['stop'] = stop_list
-df['iterations'] = iterations
-df['best_list'] = best_list
-df['worst_list'] = worse_list
-
-
-df.to_csv('results.csv', index_label=False, index=False)
+    # df.to_csv('results/results' + file + '.csv', index_label=False, index=False)
 # df["fast_improvement"] = df['fast_obj']/df['td_fast_obj'] - 1
 # df['random_improvement'] = df['random_obj']/df['td_fast_obj'] - 1
 # df.to_csv('test_td_fast2.csv', index_label=False, index=False)

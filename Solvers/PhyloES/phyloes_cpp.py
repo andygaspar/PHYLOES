@@ -8,10 +8,9 @@ from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator_and_objs, 
 from Solvers.fast_cpp.fast_cpp import FastCpp
 from Solvers.solver import Solver
 
-
 class PhyloEScpp(Solver):
     def __init__(self, d, batch: Union[int, List[Tuple]] = 16, max_iterations=25, replace=False,
-                 max_non_improve_iter=None, min_tol=1e-8):
+                 max_non_improve_iter=None, min_tol=1e-16):
         super().__init__(d)
 
         self.d_np = self.d.astype(np.double)
@@ -43,55 +42,63 @@ class PhyloEScpp(Solver):
 
     def solve(self):
 
-        t = time.time()
         iteration = 0
         batch = self.set_batch(iteration) if self.adaptive else self.batch
-        self.obj_val = 10 ** 5
+
         init_mats = self.initial_adj_mat(self.device, batch)
         obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers,
                                                              self.device)
+        obj_vals, adj_mats = self.run_fast_me(adj_mats, batch)
         best = torch.argmin(obj_vals)
-        run_val, run_sol = obj_vals[best], adj_mats[best]
+        trajectories = self.back_track(adj_mats)
+
+        self.obj_val, self.solution = obj_vals[best], adj_mats[best]
 
         tj = torch.zeros((2 * batch, self.n_taxa - 3), device=self.device, dtype=torch.long)
-        objs = torch.ones(2 * batch, device=self.device) * 1000
-        objs[batch - 1] = 10000
+        objs = torch.ones(2 * batch, device=self.device, dtype=torch.float64) * 1000
+
+
+        tj[batch: 2 * batch] = trajectories
+        objs[batch: 2 * batch] = obj_vals
+        objs, sorted_idxs = torch.sort(objs)
+        tj = tj[sorted_idxs]
+
 
         not_improved_counter = 0
+        iteration = 1
         combs = 2
         while combs > 1 and iteration < self.max_iterations and objs[batch-1] - objs[0] > self.min_tol:
-            # print(iteration, batch, objs[:batch], self.nni_counter, self.spr_counter)
-            obj_vals, adj_mats = self.run_fast_me(adj_mats, batch)
-            best = torch.argmin(obj_vals)
-
-            if run_val < self.obj_val:
-                self.obj_val, self.solution = obj_vals[best], adj_mats[best]
-                not_improved_counter = 0
-            else:
-                not_improved_counter += 1
-
-            trajectories = self.back_track(adj_mats)
-            tj[batch: 2 * batch] = trajectories
-            objs[batch: 2 * batch] = obj_vals
+            # print(iteration, batch, [ob.item() for ob in objs[:batch]], self.nni_counter, self.spr_counter)
+            # print([(objs[i] == objs[i + 1]).item() for i in range(batch - 1)])
 
             batch = self.set_batch(iteration) if self.adaptive else self.batch
+            objs, tj = objs[:2*batch],  tj[:2*batch]
 
             init_mats = self.initial_adj_mat(self.device, batch)
             combs, adj_mats, objs, tj = self.distribution_policy(init_mats, tj, objs, batch)
             self.best_vals.append(objs[0].item())
             self.worse_vals.append(objs[batch-1].item())
+
+            obj_vals, adj_mats = self.run_fast_me(adj_mats, batch)
+            best = torch.argmin(obj_vals)
+            trajectories = self.back_track(adj_mats)
+
+            if obj_vals[best] < self.obj_val:
+                self.obj_val, self.solution = obj_vals[best], adj_mats[best]
+                not_improved_counter = 0
+            else:
+                not_improved_counter += 1
+
+            tj[batch: 2 * batch] = trajectories
+            objs[batch: 2 * batch] = obj_vals
+
+            objs, sorted_idxs = torch.sort(objs)
+            tj = tj[sorted_idxs]
+
             iteration += 1
-            # print(combs)
-            # print((objs[15] - objs[0]).item())
-            # print([ob.item() for ob in objs[:16]])
 
-        best_val, adj_mats = self.run_fast_me(adj_mats, batch)
-        best = torch.argmin(obj_vals)
-
-        if best_val[best] < run_val:
-            run_val, run_sol = best_val[best], adj_mats[best]
-        if run_val < self.obj_val:
-            self.obj_val, self.solution = run_val, run_sol
+        # print(iteration, batch, [ob.item() for ob in objs[:batch]], self.nni_counter, self.spr_counter)
+        # print([(objs[i] == objs[i + 1]).item() for i in range(batch - 1)])
 
         self.n_trees = iteration * batch
 
@@ -110,7 +117,6 @@ class PhyloEScpp(Solver):
         return self.batch[-1][1]
 
     def back_track(self, trees):
-        # idxs = torch.argsort(objs)
         sols = trees
         trajectories = self.tree_climb(sols)
         return trajectories
@@ -123,7 +129,7 @@ class PhyloEScpp(Solver):
         adj_mats = adj_mats.unsqueeze(1).repeat(1, 2, 1, 1)
         reversed_idxs = torch.tensor([[i, i - 1] for i in range(1, adj_mats.shape[0] * 2, 2)],
                                      device=adj_mats.device).flatten()
-        trajectories = torch.zeros((adj_mats.shape[0], self.n_taxa - 3), dtype=torch.int)
+        trajectories = torch.zeros((adj_mats.shape[0], self.n_taxa - 3), device=self.device, dtype=torch.int)
 
         last_inserted_taxa = self.n_taxa - 1
         for step in range(self.m - 1, self.n_taxa, -1):
@@ -155,12 +161,14 @@ class PhyloEScpp(Solver):
         return adj_mats
 
     def distribution_policy(self, adj_mats, trajectories, obj_vals, batch):
-        obj_vals, sorted_idxs = torch.sort(obj_vals)
-        trajectories = trajectories[sorted_idxs]
         if self.replace:
-            for i in range(batch // 2, batch - 1):
-                if torch.equal(trajectories[i], trajectories[i + 1]):
-                    trajectories[i] = trajectories[0]  # replace with best
+            equals = [obj_vals[i] == obj_vals[i + 1] for i in range(batch - 1)]
+            idx = batch - 2
+            while idx > 0 and equals[idx]:
+                idx -= 1
+            if 0 < idx < batch - 2:
+                # print("replacement")
+                trajectories[idx + 1] = trajectories[0]
         tj = trajectories[:batch]
 
         combs = 1
@@ -186,4 +194,8 @@ class PhyloEScpp(Solver):
         self.nni_counter += [nni_counts]
         self.spr_counter += [spr_counts]
 
-        return torch.tensor(objs, device=self.device), torch.tensor(adjs, device=self.device)
+        objs_tensor = torch.tensor(objs, device=self.device)
+        adjs_tensor = torch.tensor(adjs, device=self.device)
+        self.fast_me_solver.free_result_memory()
+
+        return objs_tensor, adjs_tensor

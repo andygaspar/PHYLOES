@@ -54,7 +54,7 @@ extern "C" {
 
 
         omp_set_num_threads(num_procs);
-        #pragma omp parallel for schedule(static) shared(A, d)
+        #pragma omp parallel for schedule(dynamic) shared(A, d)
         for(t = 0; t < population_size; t++) {
             A[t]= new int*[m];
             for(i = 0; i< m; i++) A[t][i] = &init_adj[t*mat_size + i*m];
@@ -82,6 +82,14 @@ extern "C" {
 
         return res;
         }
+
+    void free_result(results* res){
+        delete[] res -> solution_adjs;
+        delete[] res -> objs;
+        res -> solution_adjs = nullptr;
+        res -> objs = nullptr;
+        res  = nullptr;
+    }
 
 
     results* test_obj(){

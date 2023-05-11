@@ -17,7 +17,8 @@ class Result(ctypes.Structure):
 class FastCpp:
 
     def __init__(self):
-        self.lib = ctypes.CDLL('Solvers/fast_cpp/bridge.so.')
+        self.run_results = None
+        self.lib = ctypes.CDLL('Solvers/fast_cpp/bridge.so')
         self.numProcs = os.cpu_count()
         # self.lib.test.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
         #                           ctypes.c_int, ctypes.c_int]
@@ -27,9 +28,13 @@ class FastCpp:
         self.lib.test_parallel.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int),
                                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
         self.lib.test_obj.argtypes = []
+        self.lib.free_result.argtypes = [ctypes.POINTER(Result)]
+
         self.lib.test_obj.restype = ctypes.POINTER(Result)
         self.lib.test_parallel.restype = ctypes.POINTER(Result)
 
+    def free_result_memory(self):
+        self.lib.free_result(self.run_results)
     def test(self, d, adj_mat, n_taxa):
         np.savetxt("Solvers/fast_cpp/mat", d, fmt='%.19f', delimiter=' ')
         np.savetxt("Solvers/fast_cpp/init_mat", adj_mat, fmt='%i', delimiter=' ')
@@ -55,6 +60,7 @@ class FastCpp:
         objs = np.array(run_results.contents.objs[:population_size])
         nni_counts = run_results.contents.nni_counts
         spr_counts = run_results.contents.spr_counts
+        self.run_results = run_results
 
         return adjs, objs, nni_counts, spr_counts
 

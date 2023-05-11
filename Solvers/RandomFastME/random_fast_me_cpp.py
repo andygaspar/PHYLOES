@@ -36,6 +36,7 @@ class RandomFastMEcpp(Solver):
             mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)
             adjs, objs, nni_counts, spr_counts = \
                 self.fast_me_solver.run_parallel(self.d_np, mats, self.n_taxa, self.m, batch)
+            self.fast_me_solver.free_result_memory()
             tot_iter += objs.shape[0]
             self.nni_counter += nni_counts
             self.spr_counter += spr_counts
