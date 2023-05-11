@@ -2,14 +2,13 @@ import os
 
 import numpy as np
 
-from Solvers.FastME.fast_me import FastMeSolver
-from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator_and_objs, random_trees_generator
-from Solvers.Random.random_solver import RandomSolver
-from Solvers.fast_cpp.fast_cpp import FastCpp
+from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator
+from Solvers.RI.Random.random_solver import RandomSolver
+from Solvers.Fast_BNNI_BSPR.fast_cpp import FastCpp
 from Solvers.solver import Solver
 
 
-class RandomFastMEcpp(Solver):
+class RI(Solver):
     def __init__(self, d, parallel=False, spr=True):
         super().__init__(d)
         self.d_np = self.d.astype(np.double)

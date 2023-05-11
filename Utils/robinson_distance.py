@@ -6,7 +6,7 @@ from ete3 import Tree
 from Solvers.FastME.pharser_newik.newwik_handler import compute_newick
 from Solvers.solver import Solver
 
-df = pd.read_csv('results/resultsrdpii_K2P.csv.csv')
+df = pd.read_csv('../results/resultsrdpii_K2P.csv.csv')
 
 def get_ete_tree(code, n_taxa):
     solver = Solver()

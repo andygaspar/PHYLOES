@@ -18,7 +18,7 @@ class FastCpp:
 
     def __init__(self):
         self.run_results = None
-        self.lib = ctypes.CDLL('Solvers/fast_cpp/bridge.so')
+        self.lib = ctypes.CDLL('Solvers/Fast_BNNI_BSPR/bridge.so')
         self.numProcs = os.cpu_count()
         # self.lib.test.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
         #                           ctypes.c_int, ctypes.c_int]
@@ -36,12 +36,12 @@ class FastCpp:
     def free_result_memory(self):
         self.lib.free_result(self.run_results)
     def test(self, d, adj_mat, n_taxa):
-        np.savetxt("Solvers/fast_cpp/mat", d, fmt='%.19f', delimiter=' ')
-        np.savetxt("Solvers/fast_cpp/init_mat", adj_mat, fmt='%i', delimiter=' ')
+        np.savetxt("Solvers/Fast_BNNI_BSPR/mat", d, fmt='%.19f', delimiter=' ')
+        np.savetxt("Solvers/Fast_BNNI_BSPR/init_mat", adj_mat, fmt='%i', delimiter=' ')
         n = np.array([n_taxa], dtype=np.int32)
-        np.savetxt("Solvers/fast_cpp/n_taxa", n, fmt='%i', delimiter=' ')
-        os.system("Solvers/fast_cpp/fast_me")
-        return np.loadtxt("Solvers/fast_cpp/result_adj_mat.txt", dtype=int)
+        np.savetxt("Solvers/Fast_BNNI_BSPR/n_taxa", n, fmt='%i', delimiter=' ')
+        os.system("Solvers/Fast_BNNI_BSPR/fast_me")
+        return np.loadtxt("Solvers/Fast_BNNI_BSPR/result_adj_mat.txt", dtype=int)
 
     def run(self, d, adj_mat, n_taxa, m):
         self.lib.test.restype = ndpointer(dtype=ctypes.c_int32, shape=(m, m))
