@@ -28,19 +28,22 @@ files = sorted(files)
 print(files)
 
 
+
 for file in files[4:8]:
-    print(file)
+    print("##########################")
+    print(f'Working on datsaset: {file}')
+    print(f'Algorithm params: \n> population size (n_iter, pop_size): {batch}\n> max iterations: {max_iter}\n')
     data_set_list = []
     run_list, batch_list, max_iter_list, stop_list, n_better_solution = [], [], [], [], []
 
     result_list, best_list, worse_list, iterations = [], [], [], []
 
-    run_per_problem = 1
-
+    run_per_problem = 2
+    #print('population size', batch, 'max iteration', max_iter)
     d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/experiment_mats/' + file), 10))
 
     for run in range(run_per_problem):
-        print('\n', d.shape[0], batch, max_iter, run)
+        print('\n##> Run', run)
         result_run = [d.shape[0], file]
         run_list.append(run)
         batch_list.append(batch)
@@ -49,8 +52,8 @@ for file in files[4:8]:
         random.seed(seed)
         phyloes = PhyloES(d, batch=batch, max_iterations=max_iter, replace=True)
         phyloes.solve_timed()
-        print("phyloes CPP  time:", phyloes.time, '   obj:', phyloes.obj_val, '   n_trees',
-              phyloes.n_trees, '  stop', phyloes.stop_criterion)
+        print("phyloes\ttime:", phyloes.time, '\tobj:', phyloes.obj_val, '   n_trees:',
+              phyloes.n_trees, '  stop criterion:', phyloes.stop_criterion)
         phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
         stop_list.append(phyloes.stop_criterion)
         best_list.append(phyloes.best_vals)
@@ -59,16 +62,16 @@ for file in files[4:8]:
 
         rand_fast = RI(d, parallel=False, spr=True)
         rand_fast.solve_timed(phyloes.n_trees)
-        print("rand_fa  time:", rand_fast.time, '   obj:', rand_fast.obj_val, '   n_trees',
+        print("rand_fa\ttime:", rand_fast.time, '\tobj:', rand_fast.obj_val, '   n_trees:',
               phyloes.n_trees)
         rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
 
         fast = FastMeSolver(d, bme=True, nni=True, digits=17, bootrstap=True, post_processing=True, triangular_inequality=False,
                             logs=False)
         fast.solve_all_flags()
-        print("fast  time:",  fast.time, '   obj:', fast.obj_val)
+        print("fast\ttime:",  fast.time, '\tobj:', fast.obj_val)
         fast_tj = tuple(phyloes.tree_climb(torch.tensor(fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
-        print(fast_tj)
+        #print(fast_tj)
         result_run += [fast.obj_val, rand_fast.obj_val,  phyloes.obj_val, fast.time, rand_fast.time,
                        phyloes.time, fast.method, rand_fast.nni_counter, rand_fast.spr_counter, phyloes.nni_counter, phyloes.spr_counter]
         result_run += [fast_tj, rand_fast_tj, phyloes_tj]
