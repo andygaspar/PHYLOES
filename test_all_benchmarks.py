@@ -12,7 +12,7 @@ from Solvers.RI.ri import RI
 
 torch.set_printoptions(precision=16)
 
-
+torch.manual_seed(0)
 np.random.seed(0)
 random.seed(0)
 seed = 0
@@ -37,7 +37,7 @@ for file in files:
 
     result_list, best_list, worse_list, iterations = [], [], [], []
 
-    run_per_problem = 2
+    run_per_problem = 20
     #print('population size', batch, 'max iteration', max_iter)
     d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/experiment_mats/' + file), 10))
 
@@ -53,6 +53,8 @@ for file in files:
         phyloes.solve_timed()
         print("phyloes\ttime:", phyloes.time, '\tobj:', phyloes.obj_val, '   n_trees:',
               phyloes.n_trees, '  stop criterion:', phyloes.stop_criterion)
+        sol = torch.tensor(phyloes.solution).unsqueeze(0)
+        print(sol.shape)
         phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
         stop_list.append(phyloes.stop_criterion)
         best_list.append(phyloes.best_vals)
