@@ -10,7 +10,7 @@ from Solvers.solver import Solver
 
 class PhyloES(Solver):
     def __init__(self, d, population_size: Union[int, List[Tuple]] = 16, max_iterations=1000, replace=True,
-                 max_non_improve_iter=None, min_tol=1e-16):
+                 max_non_improve_iter=None, min_tol=1e-16, labels: List[str] = None):
 
         """
 
@@ -32,7 +32,7 @@ class PhyloES(Solver):
 
         """
 
-        super().__init__(d)
+        super().__init__(d, labels=labels)
 
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
@@ -68,12 +68,12 @@ class PhyloES(Solver):
         """
 
         iteration = 0
-        population_size = self.population_size[iteration] if self.adaptive else self.population_size
+        population_size = self.set_batch(iteration) if self.adaptive else self.population_size
 
         init_mats = self.initial_adj_mat(self.device, population_size)
         obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers,
                                                              self.device)
-        obj_vals, adj_mats = self.run_fast_me(adj_mats, population_size)
+        obj_vals, adj_mats = self.run_bnni_spr(adj_mats, population_size)
         best = torch.argmin(obj_vals)
         trajectories = self.tree_encoding(adj_mats)
 
@@ -92,7 +92,7 @@ class PhyloES(Solver):
         combs = 2
         while combs > 1 and iteration < self.max_iterations and objs[population_size - 1] - objs[0] > self.min_tol:
 
-            population_size = self.population_size(iteration) if self.adaptive else self.population_size
+            population_size = self.set_batch(iteration) if self.adaptive else self.population_size
             objs, tj = objs[:2 * population_size], tj[:2 * population_size]
 
             init_mats = self.initial_adj_mat(self.device, population_size)
@@ -100,7 +100,7 @@ class PhyloES(Solver):
             self.best_vals.append(objs[0].item())
             self.worse_vals.append(objs[population_size - 1].item())
 
-            obj_vals, adj_mats = self.run_fast_me(adj_mats, population_size)
+            obj_vals, adj_mats = self.run_bnni_spr(adj_mats, population_size)
             best = torch.argmin(obj_vals)
             trajectories = self.tree_encoding(adj_mats)
 
@@ -127,8 +127,9 @@ class PhyloES(Solver):
         self.T = self.get_tau(self.solution.to('cpu'))
         self.d = self.d.to('cpu')
         self.obj_val = self.compute_obj()
+        self.solution = self.solution.to('cpu').numpy()
 
-    def population_size(self, iteration):
+    def set_batch(self, iteration):
         for i in range(len(self.population_size) - 1):
             if self.population_size[i][0] <= iteration < self.population_size[i + 1][0]:
                 return self.population_size[i][1]
@@ -136,10 +137,10 @@ class PhyloES(Solver):
 
     def tree_encoding(self, trees):
         sols = trees
-        trajectories = self.tree_climb(sols)
+        trajectories = self.decoding(sols)
         return trajectories
 
-    def tree_climb(self, adj_mats):
+    def decoding(self, adj_mats):
         last_inserted_taxa = self.n_taxa - 1
         n_internals = self.m - self.n_taxa
 
@@ -201,7 +202,7 @@ class PhyloES(Solver):
 
         return combs, adj_mats, obj_vals, trajectories
 
-    def run_fast_me(self, adj_mats, population_size):
+    def run_bnni_spr(self, adj_mats, population_size):
         mats = adj_mats.to('cpu').numpy().astype(dtype=np.int32)
         adjs, objs, nni_counts, spr_counts = \
             self.fast_me_solver.run_parallel(self.d_np, mats, self.n_taxa, self.m, population_size)

@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import numpy as np
 
@@ -9,8 +10,8 @@ from Solvers.solver import Solver
 
 
 class RI(Solver):
-    def __init__(self, d, parallel=False, spr=True):
-        super().__init__(d)
+    def __init__(self, d, parallel=False, labels: List[str] = None):
+        super().__init__(d, labels=labels)
         self.d_np = self.d.astype(np.double)
         self.random_solver = RandomSolver(d)
         self.parallel = parallel

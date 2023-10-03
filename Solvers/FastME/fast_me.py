@@ -2,6 +2,7 @@ import csv
 import os
 import time
 import warnings
+from typing import List
 
 import networkx as nx
 import numpy as np
@@ -20,8 +21,8 @@ class FastMeSolver(Solver):
 
     def __init__(self, d,
                  bme=True, nni=True, digits=None, post_processing=False, bootrstap=False, init_topology=None,
-                 triangular_inequality=False, logs=False, num_topologies=1):
-        super().__init__(d)
+                 triangular_inequality=False, logs=False, num_topologies=1, labels: List[str] = None):
+        super().__init__(d, labels=labels)
         self.path = 'Solvers/FastME/'
         self.init_topology = init_topology
         self.flags = ''

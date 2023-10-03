@@ -37,8 +37,8 @@ for file in files:
 
     result_list, best_list, worse_list, iterations = [], [], [], []
 
-    run_per_problem = 1
-    #print('population size', pop_size, 'max iteration', max_iter)
+    run_per_problem = 10
+
     d = np.abs(np.around(np.loadtxt('Data_/benchmarks/matrices/experiment_mats/' + file), 10))
 
     for run in range(run_per_problem):
@@ -58,7 +58,7 @@ for file in files:
         worse_list.append(phyloes.worse_vals)
         iterations.append(phyloes.iterations)
 
-        rand_fast = RI(d, parallel=False, spr=True)
+        rand_fast = RI(d, parallel=False)
         rand_fast.solve_timed(phyloes.n_trees)
         print("rand_fa\ttime:", rand_fast.time, '\tobj:', rand_fast.obj_val, '   n_trees:',
               phyloes.n_trees)
@@ -85,12 +85,6 @@ for file in files:
 
 
 # df.to_csv('results/results' + file + '.csv', index_label=False, index=False)
-# df["fast_improvement"] = df['fast_obj']/df['td_fast_obj'] - 1
-# df['random_improvement'] = df['random_obj']/df['td_fast_obj'] - 1
-# df.to_csv('test_td_fast2.csv', index_label=False, index=False)
-# results = np.array(results)
-# df = pd.DataFrame({"mcts": results[:, 0], "lp_nj": results[:, 1], "fast": results[:, 2]})
-# df.to_csv("test_new.csv", index_label=False, index=False)
 
 
 

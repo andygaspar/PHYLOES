@@ -1,6 +1,7 @@
 import copy
 import time
 from abc import abstractmethod
+from typing import List
 
 import networkx as nx
 import numpy as np
@@ -9,15 +10,17 @@ from matplotlib import pyplot as plt
 
 pippo = 0
 
+
 class Solver:
 
-    def __init__(self, d=None, sorted_d=False):
+    def __init__(self, d=None, sorted_d=False, labels: List[str] = None):
         if sorted_d:
             self.d = d
         else:
             self.d = self.sort_d(d) if d is not None else None
         self.n_taxa = d.shape[0] if d is not None else None
         self.m = self.n_taxa * 2 - 2 if d is not None else None
+        self.labels = labels
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.np_powers = np.array([2 ** (-i) for i in range(self.n_taxa)]) if self.n_taxa is not None else None
         if self.n_taxa is not None:
@@ -26,7 +29,6 @@ class Solver:
                 self.powers = torch.pow(torch.tensor([2], dtype=torch.float64, device=self.device), exponents)
             else:
                 self.powers = self.np_powers
-
 
         self.solution = None
         self.obj_val = None
@@ -98,7 +100,7 @@ class Solver:
         Tau[diag] = 0  # diagonal elements should be zero
         for i in range(adj_mat.shape[1]):
             # The second term has the same shape as Tau due to broadcasting
-            Tau = torch.minimum(Tau, Tau[ i, :].unsqueeze(0)
+            Tau = torch.minimum(Tau, Tau[i, :].unsqueeze(0)
                                 + Tau[:, i].unsqueeze(1))
         return Tau[:n_taxa, :n_taxa]
 
@@ -110,7 +112,7 @@ class Solver:
         Tau[diag] = 0  # diagonal elements should be zero
         for i in range(adj_mat.shape[1]):
             # The second term has the same shape as Tau due to broadcasting
-            Tau = torch.minimum(Tau, Tau[ i, :].unsqueeze(0)
+            Tau = torch.minimum(Tau, Tau[i, :].unsqueeze(0)
                                 + Tau[:, i].unsqueeze(1))
         return Tau
 
@@ -174,6 +176,7 @@ class Solver:
         Tau[:, diag_idx, diag_idx] = 0
         Tau = Tau.to(torch.long)
         return (d * powers[Tau[:, :n_taxa, :n_taxa]]).reshape(adj_mat.shape[0], -1).sum(dim=-1)
+
     @staticmethod
     def compute_obj_val_batch_2(adj_mat, d, n_taxa):
         sub_adj = adj_mat[n_taxa:, n_taxa:]
@@ -184,7 +187,7 @@ class Solver:
         for i in range(sub_adj.shape[1]):
             # The second term has the same shape as Tau_int due to broadcasting
             Tau_int = torch.minimum(Tau_int, Tau_int[i, :].unsqueeze(0)
-                                + Tau_int[:, i].unsqueeze(1))
+                                    + Tau_int[:, i].unsqueeze(1))
         idxs = torch.nonzero(adj_mat[:n_taxa])[:, 1]
         idx_int_to_taxa = torch.vstack([idxs.repeat_interleave(n_taxa), idxs.repeat(n_taxa)]) - n_taxa
         Tau = (Tau_int[idx_int_to_taxa[0], idx_int_to_taxa[1]] + 2).reshape(n_taxa, n_taxa)
@@ -211,15 +214,21 @@ class Solver:
         Tau = Tau.to(torch.long)
         return Tau
 
-    def plot_phylogeny(self, adj_mat=None, labels=None, size=1000, filename=None, show=True):
+    def get_nx_graph(self):
 
-        adj_mat = adj_mat if adj_mat is not None else self.solution
+        g = nx.from_numpy_array(self.solution)
+        if self.labels is not None:
+            g = nx.relabel_nodes(g, dict(zip(g, self.labels)))
+        return g
 
-        adj_mat = adj_mat.to('cpu').numpy() if self.device == 'cuda:0' else adj_mat.numpy()
-        g = nx.from_numpy_matrix(adj_mat)
+    def plot_phylogeny(self, node_size=1000, filename=None, show=True):
+
+        g = self.get_nx_graph()
+
         nx.draw(g, node_color=['green' for _ in range(self.n_taxa)] + ['red' for _ in range(self.m - self.n_taxa)],
-                with_labels=True, font_weight='bold', node_size=size)
+                with_labels=True, font_weight='bold', node_size=node_size)
+
         if show:
             plt.show()
         if filename is not None:
-            plt.savefig("Plots/" + filename)
+            plt.savefig(filename)
