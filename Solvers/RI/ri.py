@@ -4,7 +4,7 @@ import numpy as np
 
 from Solvers.PhyloES.PhyloEsUtils.utils import random_trees_generator
 from Solvers.RI.Random.random_solver import RandomSolver
-from Solvers.Fast_BNNI_BSPR.fast_cpp import FastCpp
+from Solvers.BNNI_BSPR.fast_cpp import FastCpp
 from Solvers.solver import Solver
 
 

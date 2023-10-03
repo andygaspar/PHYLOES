@@ -18,7 +18,7 @@ class FastCpp:
 
     def __init__(self):
         self.run_results = None
-        self.lib = ctypes.CDLL('Solvers/Fast_BNNI_BSPR/bridge.so')
+        self.lib = ctypes.CDLL('Solvers/BNNI_BSPR/bridge.so')
         self.numProcs = os.cpu_count()
         # self.lib.test.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
         #                           ctypes.c_int, ctypes.c_int]

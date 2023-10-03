@@ -1,6 +1,12 @@
 
+# Installation
 
-1) Run install.sh on terminal to install all requirements via pip and cpp extension
+Run install.sh on terminal to install all requirements via pip and cpp extension
+
+# Run PhyloES
+
+
+
 
 2) Download and install FastME at http://www.atgc-montpellier.fr/fastme/binaries.php software 
 and add executable file <fastme> into Solvers/FastME
