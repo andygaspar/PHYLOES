@@ -114,11 +114,11 @@ class PhyloES(Solver):
         trajectories = self.tree_climb(sols)
         return trajectories
 
-    def tree_climb(self, adj_mats):
+    def tree_climb(self, adj_mats, test_bug=False):
         last_inserted_taxa = self.n_taxa - 1
         n_internals = self.m - self.n_taxa
 
-        adj_mats = adjust_matrices(adj_mats, last_inserted_taxa, n_internals, self.n_taxa)
+        adj_mats = adjust_matrices(adj_mats, last_inserted_taxa, n_internals, self.n_taxa, test_bug)
         adj_mats = adj_mats.unsqueeze(1).repeat(1, 2, 1, 1)
         reversed_idxs = torch.tensor([[i, i - 1] for i in range(1, adj_mats.shape[0] * 2, 2)],
                                      device=adj_mats.device).flatten()

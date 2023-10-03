@@ -53,8 +53,6 @@ for file in files:
         phyloes.solve_timed()
         print("phyloes\ttime:", phyloes.time, '\tobj:', phyloes.obj_val, '   n_trees:',
               phyloes.n_trees, '  stop criterion:', phyloes.stop_criterion)
-        sol = torch.tensor(phyloes.solution).unsqueeze(0)
-        print(sol.shape)
         phyloes_tj = tuple(phyloes.tree_climb(torch.tensor(phyloes.solution).unsqueeze(0)).to('cpu').tolist()[0])
         stop_list.append(phyloes.stop_criterion)
         best_list.append(phyloes.best_vals)
@@ -65,7 +63,7 @@ for file in files:
         rand_fast.solve_timed(phyloes.n_trees)
         print("rand_fa\ttime:", rand_fast.time, '\tobj:', rand_fast.obj_val, '   n_trees:',
               phyloes.n_trees)
-        rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0)).to('cpu').tolist()[0])
+        rand_fast_tj = tuple(phyloes.tree_climb(torch.tensor(rand_fast.solution).unsqueeze(0), test_bug=True).to('cpu').tolist()[0])
 
         fast = FastMeSolver(d, bme=True, nni=True, digits=17, bootrstap=True, post_processing=True, triangular_inequality=False,
                             logs=False)
