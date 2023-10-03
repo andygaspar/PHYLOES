@@ -2,7 +2,7 @@
 
 pip install -r requirements.txt
 
-cd Solvers/Fast_BNNI_BSPR
+cd Solvers/BNNI_BSPR
 
 
 g++ -c -Ofast -fopenmp -fPIC bridge.cc fastme.cc SPR.cc bme.cc bNNI.cc graph.cc heap.cc traverse.cc initialiser.cc utils.cc
