@@ -156,3 +156,6 @@ class FastMeSolver(Solver):
                         obj_vals.append(min(vals))
                         vals = []
         return obj_vals
+
+
+
