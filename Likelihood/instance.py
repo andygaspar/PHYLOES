@@ -8,34 +8,39 @@ from Likelihood.tree import PhyloTree
 
 class Instance(object):
 
-    def __init__(self, fasta_file, n_taxa, compute_dist_matrix=False):
+    def __init__(self, fasta_file):
 
-        sequences = list(SeqIO.parse(fasta_file, "fasta"))
+        self.sequences = list(SeqIO.parse(fasta_file, "fasta"))
+        self.labels = [seq.name for seq in self.sequences]
 
+    def make_instance(self, n_taxa, compute_dist_matrix=False):
         # Compute distance matrix
-        self.d = self.compute_distance_matrix(sequences[:n_taxa]) if compute_dist_matrix else None
-        self.n_taxa = n_taxa
-        self.labels = [seq.name for seq in sequences[:n_taxa]]
 
-        tree = PhyloTree(n_taxa, self.labels)
-        tree.set_random_tree()
-        self.tree_file = tree.tree_file
+        n_taxa = n_taxa
+        labels = self.labels[:n_taxa]
+
         taxon_namespace = dendropy.TaxonNamespace()
 
         # Create an empty DnaCharacterMatrix with the taxon namespace
         dna_matrix = dendropy.DnaCharacterMatrix(taxon_namespace=taxon_namespace)
 
         # Populate the DnaCharacterMatrix with sequences from SeqRecord
-        for seq_record in sequences[:n_taxa]:
+        for seq_record in self.sequences[:n_taxa]:
             # Get or create a Taxon object for this sequence
             taxon = taxon_namespace.require_taxon(label=seq_record.id)
             # Insert sequence data into the matrix
             dna_matrix.update_taxon_namespace()
             dna_matrix[taxon] = str(seq_record.seq)
 
-        self.alignment_file = "sequence.phy"
+        alignment_file = "sequence.phy"
         # Write data to the temporary files
-        dna_matrix.write_to_path(dest=self.alignment_file, schema="phylip")
+        dna_matrix.write_to_path(dest=alignment_file, schema="phylip")
+
+        if not compute_dist_matrix:
+            return alignment_file, labels
+
+        else:
+            return alignment_file, labels, self.compute_distance_matrix(self.sequences[:n_taxa])
 
     @staticmethod
     def compute_distance_matrix(sequences):

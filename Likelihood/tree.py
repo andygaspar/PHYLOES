@@ -11,16 +11,19 @@ from matplotlib import pyplot as plt
 
 
 class PhyloTree:
-    def __init__(self, n_taxa, labels):
+    def __init__(self, n_taxa, alignment_file, labels):
         self.adj = None
         self.n_taxa = n_taxa
         self.m = 2 * self.n_taxa - 2
         self.labels = labels + [str(i) for i in range(self.n_taxa, self.m)]
         self.nx_tree = None
         self.newick_tree = None
+        self.alignment_file = alignment_file
         self.tree_file = "tree.newick"
 
     def set_random_tree(self):
+
+        # the order of the edges matters for the recursive construction of the tree
         edges = [(self.n_taxa, 0, 1.0), (self.n_taxa, 1, 1.0), (self.n_taxa, 2, 1.0)]
 
         for i in range(3, self.n_taxa):
@@ -34,6 +37,24 @@ class PhyloTree:
         for idx in edges:
             self.adj[idx[0], idx[1]] = self.adj[idx[1], idx[0]] = 1
 
+        self.set_tree(edges)
+
+    def set_tree_from_adj(self, adj: np.ndarray):
+        children = np.nonzero(adj[self.n_taxa])[0]
+        edges = []
+        for child in children:
+            self.set_recursive(self.n_taxa, child, edges, adj)
+
+        self.set_tree(edges)
+
+    def set_recursive(self, parent, child, edges, adj):
+        edges.append((parent, child, 1.0))
+        children = np.nonzero(adj[child])[0]
+        for new_child in children:
+            if new_child != parent:
+                self.set_recursive(child, new_child, edges, adj)
+
+    def set_tree(self, edges):
         # nx_tree = nx.from_numpy_array(self.adj)
         self.nx_tree = nx.DiGraph()
         self.nx_tree.add_weighted_edges_from(edges)
@@ -42,8 +63,6 @@ class PhyloTree:
 
         with open(self.tree_file, 'w') as file:
             Phylo.write(phylo_tree, file, format='newick')
-        # nx.draw(self.nx_tree, with_labels=True)
-        # plt.show()
 
     def build_clade(self, G, node):
         """Recursively build a Clade structure from a given node."""
@@ -61,3 +80,7 @@ class PhyloTree:
     def nx_to_phylo(self, G, root):
         root_clade = self.build_clade(G, root)
         return Tree(root=root_clade, rooted=False)
+
+    def show(self):
+        nx.draw(self.nx_tree, with_labels=True)
+        plt.show()

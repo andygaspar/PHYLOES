@@ -1,10 +1,11 @@
 import os
 import subprocess
 
+from Likelihood.tree import PhyloTree
 from Utils.suppress_prints import suppress_stdout_stderr
 
 
-def run_raxml(alignemnt_file, verbose= False,  keep_output_files=False):
+def run_raxml(tree: PhyloTree, verbose= False,  keep_output_files=False):
 
     if os.path.exists("Likelihood/raxml/results/RAxML_info.output"):
         subprocess.run("rm Likelihood/raxml/results/*", shell=True)
@@ -13,7 +14,7 @@ def run_raxml(alignemnt_file, verbose= False,  keep_output_files=False):
         "./Likelihood/standard-RAxML-master/raxmlHPC-PTHREADS",  # Ensure this is the correct RAxML command for your setup
         # "-f", "h ",  # Calculate likelihood of a given user tree
         "-m", "GTRGAMMA",  # Substitution model
-        "-s", "/home/andrea/Scrivania/PHYLOES/" + alignemnt_file,  # Path to the temporary alignment file
+        "-s", "/home/andrea/Scrivania/PHYLOES/" + tree.alignment_file,  # Path to the temporary alignment file
         "-n", "output",  # Output prefix
         "-w", "/home/andrea/Scrivania/PHYLOES/Likelihood/raxml/results",  # Use the temporary directory for RAxML output
         "-p 1234"

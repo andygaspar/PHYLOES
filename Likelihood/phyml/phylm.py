@@ -3,23 +3,24 @@ import re
 import shutil
 import subprocess
 
+from Likelihood.tree import PhyloTree
 from Utils.suppress_prints import suppress_stdout_stderr
 
 
-def get_likelihood(alignment_file, newick_tree_file, verbose=False, keep_output_files=False):
+def get_likelihood(tree: PhyloTree, verbose=False, keep_output_files=False):
 
-    if not os.path.exists(newick_tree_file):
-        raise FileNotFoundError(f"The Newick file {newick_tree_file} does not exist.")
+    if not os.path.exists(tree.tree_file):
+        raise FileNotFoundError(f"The Newick file {tree.tree_file} does not exist.")
 
-    if not os.path.exists(alignment_file):
-        raise FileNotFoundError(f"The alignment file {alignment_file} does not exist.")
+    if not os.path.exists(tree.alignment_file):
+        raise FileNotFoundError(f"The alignment file {tree.alignment_file} does not exist.")
 
 
     phyml_executable = "Likelihood/phyml-master/src/phyml"
     phyml_command = [
         phyml_executable,
-        "-i", alignment_file,  # Specify the alignment file
-        "-u", newick_tree_file,  # Specify the tree file
+        "-i", tree.alignment_file,  # Specify the alignment file
+        "-u", tree.tree_file,  # Specify the tree file
         "-m", "GTR",  # Specify the substitution model (adjust if necessary)
         "-s", "0",
         "-o", "n",
@@ -43,8 +44,8 @@ def get_likelihood(alignment_file, newick_tree_file, verbose=False, keep_output_
     output_dir = "Likelihood/phyml/results/"
 
     output_files = [
-        f"{alignment_file}_phyml_tree.txt",
-        f"{alignment_file}_phyml_stats.txt",
+        f"{tree.alignment_file}_phyml_tree.txt",
+        f"{tree.alignment_file}_phyml_stats.txt",
     ]
 
     if keep_output_files:
