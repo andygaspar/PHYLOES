@@ -10,7 +10,7 @@ from Solvers.solver import Solver
 
 class PhyloES(Solver):
     def __init__(self, d, population_size: Union[int, List[Tuple]] = 16, max_iterations=1000, replace=True,
-                 max_non_improve_iter=None, min_tol=1e-16, labels: List[str] = None):
+                 max_non_improve_iter=None, min_tol=1e-16, labels: List[str] = None, sort_d=False):
 
         """
 
@@ -32,7 +32,7 @@ class PhyloES(Solver):
 
         """
 
-        super().__init__(d, labels=labels)
+        super().__init__(d, labels=labels, sorted_d=not sort_d)
 
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
@@ -78,6 +78,7 @@ class PhyloES(Solver):
         trajectories = self.tree_encoding(adj_mats)
 
         self.obj_val, self.solution = obj_vals[best], adj_mats[best]
+        print(self.obj_val)
 
         tj = torch.zeros((2 * population_size, self.n_taxa - 3), device=self.device, dtype=torch.long)
         objs = torch.ones(2 * population_size, device=self.device, dtype=torch.float64) * 1000
