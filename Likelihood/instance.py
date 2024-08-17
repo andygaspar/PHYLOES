@@ -1,15 +1,24 @@
+import os
+import subprocess
+
 import dendropy
 import numpy as np
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
 from Likelihood.tree import PhyloTree
+from Utils.suppress_prints import suppress_stdout_stderr
 
+models = ["JC69", "K80 ", "F81 ", "F84", "TN93", "GTR"]
 
 class Instance(object):
 
-    def __init__(self, fasta_file):
+    def __init__(self, fasta_file, model):
 
+        if model not in models:
+            raise ValueError("Model must be one of {0}".format(models))
+        else:
+            self.model = model
         self.sequences = list(SeqIO.parse(fasta_file, "fasta"))
         self.labels = [seq.name for seq in self.sequences]
 
@@ -40,7 +49,21 @@ class Instance(object):
             return alignment_file, labels
 
         else:
-            return alignment_file, labels, self.compute_distance_matrix(self.sequences[:n_taxa])
+            with suppress_stdout_stderr():
+                os.system('Solvers/FastME/fastme -i ' + alignment_file + ' -O mat.txt -d J -r')
+            mat = np.loadtxt('mat.txt', skiprows=1, usecols=range(1, n_taxa+1))
+            # phyml_executable = "Likelihood/phyml-master/src/phyml"
+            # phyml_command = [
+            #     phyml_executable,
+            #     "-i", alignment_file,  # Specify the alignment file
+            #     "-m", self.model,  # Specify the substitution model (adjust if necessary)
+            #     "-o", "n",
+            # ]
+            #
+            # with suppress_stdout_stderr():
+            #     subprocess.run(phyml_command, check=True)
+            # mat = np.loadtxt('mat.txt')
+            return alignment_file, labels, mat
 
     @staticmethod
     def compute_distance_matrix(sequences):

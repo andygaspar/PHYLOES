@@ -20,6 +20,7 @@ class PhyloTree:
         self.newick_tree = None
         self.alignment_file = alignment_file
         self.tree_file = "tree.newick"
+        self.phylo_tree = None
 
     def set_random_tree(self):
 
@@ -59,10 +60,10 @@ class PhyloTree:
         self.nx_tree = nx.DiGraph()
         self.nx_tree.add_weighted_edges_from(edges)
         self.nx_tree = nx.relabel_nodes(self.nx_tree, dict(zip(range(self.m), self.labels)))
-        phylo_tree = self.nx_to_phylo(self.nx_tree, self.labels[self.n_taxa])
+        self.phylo_tree = self.nx_to_phylo(self.nx_tree, self.labels[self.n_taxa])
 
         with open(self.tree_file, 'w') as file:
-            Phylo.write(phylo_tree, file, format='newick')
+            Phylo.write(self.phylo_tree, file, format='newick')
 
     def build_clade(self, G, node):
         """Recursively build a Clade structure from a given node."""
@@ -84,3 +85,13 @@ class PhyloTree:
     def show(self):
         nx.draw(self.nx_tree, with_labels=True)
         plt.show()
+
+    def set_file(self, file):
+        self.tree_file = file
+
+    def set_phylo_tree(self, phylo_tree):
+        self.phylo_tree = phylo_tree
+        for clade in self.phylo_tree.find_clades():
+            clade.branch_length = 1.0
+        with open(self.tree_file, 'w') as file:
+            Phylo.write(self.phylo_tree, file, format='newick')

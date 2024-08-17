@@ -34,6 +34,8 @@ class PhyloES(Solver):
 
         super().__init__(d, labels=labels, sorted_d=not sort_d)
 
+        self.codes = None
+        self.final_trees = None
         self.d_np = self.d.astype(np.double)
         self.d = torch.tensor(self.d, device=self.device)
         self.replace = replace
@@ -73,13 +75,12 @@ class PhyloES(Solver):
         init_mats = self.initial_adj_mat(self.device, population_size)
         obj_vals, adj_mats = random_trees_generator_and_objs(3, self.d, init_mats, self.n_taxa, self.powers,
                                                              self.device)
+        # print(torch.min(obj_vals).item())
         obj_vals, adj_mats = self.run_bnni_spr(adj_mats, population_size)
         best = torch.argmin(obj_vals)
         trajectories = self.tree_encoding(adj_mats)
 
         self.obj_val, self.solution = obj_vals[best], adj_mats[best]
-        print(self.obj_val)
-
         tj = torch.zeros((2 * population_size, self.n_taxa - 3), device=self.device, dtype=torch.long)
         objs = torch.ones(2 * population_size, device=self.device, dtype=torch.float64) * 1000
 
@@ -128,6 +129,9 @@ class PhyloES(Solver):
         self.T = self.get_tau(self.solution.to('cpu'))
         self.d = self.d.to('cpu')
         self.obj_val = self.compute_obj()
+        self.obj_vals = obj_vals.to('cpu').numpy()
+        self.final_trees = adj_mats.to('cpu').numpy()
+        self.codes = trajectories.to('cpu').numpy()
         self.solution = self.solution.to('cpu').numpy()
 
     def set_batch(self, iteration):
